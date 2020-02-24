@@ -1,2 +1,2 @@
 # moneycontrol-app-api
-Money Control app API sourcecode&amp;
+Money Control app API source code.
