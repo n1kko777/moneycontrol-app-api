@@ -1,5 +1,4 @@
 version: "3"
-
 services:
   app:
     build:
@@ -9,4 +8,51 @@ services:
     volumes:
       - ./app:/app
     command: >
-      sh -c "python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      - DEBUG=TRUE
+
+  redis:
+    image: "redis:alpine"
+
+  celery:
+    build:
+      context: .
+    command: celery -A app worker -l info
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+      - redis
+    env_file: .env
+    environment:
+      - DEBUG=TRUE
+
+  celery-beat:
+    build:
+      context: .
+    command: celery -A app beat -l info
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+      - redis
+    env_file: .env
+    environment:
+      - DEBUG=TRUE
+
+  db:
+    image: postgres:10-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+volumes:
+  postgres_data:
+# TIP: docker-compsoe automatically adds folder name as prefix
+# to volumes' names. It could cause problems if you change folder name
+# to control this you can run docker-compose with -p flag
+# example: docker-compose -p "your_prefix" up
