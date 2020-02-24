@@ -13,6 +13,8 @@ services:
              python manage.py runserver 0.0.0.0:8000"
     depends_on:
       - db
+    links:
+      - db:db
     env_file: .env
     environment:
       - DEBUG=TRUE
@@ -29,6 +31,8 @@ services:
     depends_on:
       - db
       - redis
+    links:
+      - db:db
     env_file: .env
     environment:
       - DEBUG=TRUE
@@ -42,6 +46,8 @@ services:
     depends_on:
       - db
       - redis
+    links:
+      - db:db
     env_file: .env
     environment:
       - DEBUG=TRUE
