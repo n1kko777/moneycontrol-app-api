@@ -1,5 +1,9 @@
 version: "3"
 services:
+  db:
+    image: postgres:10-alpine
+    env_file: .env
+
   app:
     build:
       context: .
@@ -52,10 +56,6 @@ services:
     environment:
       - DEBUG=TRUE
 
-  db:
-    image: postgres:10-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
 volumes:
   postgres_data:
 # TIP: docker-compsoe automatically adds folder name as prefix
