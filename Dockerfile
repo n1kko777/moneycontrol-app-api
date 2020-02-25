@@ -22,4 +22,4 @@ RUN chmod -R 755 /vol/web
 
 USER user
 
-CMD python3 manage.py runserver 0.0.0.0:$PORT
+CMD python manage.py runserver 0.0.0.0:$PORT
