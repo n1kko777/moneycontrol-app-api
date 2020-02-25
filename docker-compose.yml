@@ -23,39 +23,6 @@ services:
     environment:
       - DEBUG=TRUE
 
-  redis:
-    image: "redis:alpine"
-
-  celery:
-    build:
-      context: .
-    command: celery -A app worker -l info
-    volumes:
-      - ./app:/app
-    depends_on:
-      - db
-      - redis
-    links:
-      - db:db
-    env_file: .env
-    environment:
-      - DEBUG=TRUE
-
-  celery-beat:
-    build:
-      context: .
-    command: celery -A app beat -l info
-    volumes:
-      - ./app:/app
-    depends_on:
-      - db
-      - redis
-    links:
-      - db:db
-    env_file: .env
-    environment:
-      - DEBUG=TRUE
-
 volumes:
   postgres_data:
 # TIP: docker-compsoe automatically adds folder name as prefix
