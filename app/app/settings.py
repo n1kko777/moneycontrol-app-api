@@ -190,9 +190,4 @@ CELERY_BEAT_SCHEDULE = {
     #     'task': 'core.tasks.hello',
     #     'schedule': crontab()  # execute every minute
     # },
-    # 'make_interest': {
-    #     'task': 'core.tasks.call_make_interest',
-    #     'schedule': crontab()  # execute every minute
-    # },
-
 }
