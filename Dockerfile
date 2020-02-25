@@ -6,9 +6,6 @@ ENV PYTHONUNBUFFERED 1
 COPY ./requirements.txt requirements.txt
 COPY ./app /app
 
-# install psycopg
-# jpeg-dev and musl-dev zlib zlib-dev in case you will use Pillow
-
 RUN apk add --update --no-cache postgresql-client jpeg-dev
 RUN apk add --update --no-cache --virtual .tmp-build-deps \
     gcc libc-dev linux-headers postgresql-dev musl-dev zlib zlib-dev
@@ -24,3 +21,5 @@ RUN chown -R user:user /vol/
 RUN chmod -R 755 /vol/web
 
 USER user
+
+CMD python3 manage.py runserver 0.0.0.0:$PORT
