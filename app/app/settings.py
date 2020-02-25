@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 import dj_database_url
 import dotenv
-import django_heroku
 from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -198,6 +197,3 @@ CELERY_BEAT_SCHEDULE = {
     # },
 
 }
-
-# Activate Django-Heroku.
-django_heroku.settings(locals())
