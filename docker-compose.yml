@@ -20,8 +20,6 @@ services:
     links:
       - db:db
     env_file: .env
-    environment:
-      - DEBUG=TRUE
 
 volumes:
   postgres_data:
