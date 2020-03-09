@@ -47,7 +47,7 @@ class Profile(models.Model):
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.first_name} {self.last_name} (id={self.id})'
 
 
 class Account(models.Model):

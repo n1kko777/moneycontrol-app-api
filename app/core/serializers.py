@@ -4,7 +4,7 @@ from . import models
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    profiles = serializers.PrimaryKeyRelatedField(
+    profiles = serializers.StringRelatedField(
         many=True,
         read_only=True)
 
@@ -20,8 +20,10 @@ class CompanySerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         profile = models.Profile.objects.get(
             user=self.context['request'].user)
-        instance = models.Company.objects.create(**validated_data)
         profile.is_admin = True
+        profile.save()
+
+        instance = models.Company.objects.create(**validated_data)
         instance.profiles.add(profile)
 
         return instance
@@ -38,10 +40,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             "phone",
             "phone_confirmed",
             "image",
+            'is_admin',
+            'company',
             "created",
             "last_updated",
         ]
-        read_only_fields = ['is_admin', 'company']
+
+        read_only_fields = [
+            'is_admin',
+            'company',
+        ]
 
 
 class AccountSerializer(serializers.ModelSerializer):
