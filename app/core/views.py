@@ -38,7 +38,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return object for current authenticated user only"""
-        return self.queryset.filter(user=self.request.user)
+        profile = models.Profile.objects.get(user=self.request.user)
+        if profile.is_admin:
+            return models.Profile.objects.filter(company=profile.company)
+        else:
+            return self.queryset.filter(user=self.request.user)
 
 
 class AccountViewSet(viewsets.ModelViewSet):
