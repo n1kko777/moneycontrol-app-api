@@ -11,10 +11,15 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Company
         fields = [
+            "id",
             "company_name",
             "profiles",
             "created",
             "last_updated",
+        ]
+
+        read_only_fields = [
+            "id",
         ]
 
     def create(self, validated_data):
