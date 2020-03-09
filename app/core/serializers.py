@@ -21,7 +21,7 @@ class CompanySerializer(serializers.ModelSerializer):
         profile = models.Profile.objects.get(
             user=self.context['request'].user)
         instance = models.Company.objects.create(**validated_data)
-
+        profile.is_admin = True
         instance.profiles.add(profile)
 
         return instance
