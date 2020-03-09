@@ -1,24 +1,21 @@
-from rest_framework.routers import DefaultRouter
 from django.urls import path, include
-from core import views
+from rest_framework import routers
 
-# from rest_framework.urlpatterns import format_suffix_patterns
+from . import views
+
 
 app_name = 'core'
 
-router = DefaultRouter()
-
-router.register('acustomer', views.CustomerDetail2)
-router.register('account', views.AccountViewSet)
-router.register('action', views.ActionViewSet)
-router.register('transaction', views.TransactionViewSet)
-router.register('transfer', views.TransferViewSet)
+router = routers.DefaultRouter()
+router.register("Tag", views.TagViewSet)
+router.register("Action", views.ActionViewSet)
+router.register("Category", views.CategoryViewSet)
+router.register("Transfer", views.TransferViewSet)
+router.register("Profile", views.ProfileViewSet)
+router.register("Account", views.AccountViewSet)
+router.register("Company", views.CompanyViewSet)
+router.register("Transaction", views.TransactionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('customer/', views.CustomerDetail3.as_view(), name='customer'),
-    path('transfer_alt/', views.CreateTransferView.as_view())
 ]
-
-# not working with routes. I thing because this is included in routes
-# urlpatterns = format_suffix_patterns(urlpatterns)
