@@ -16,6 +16,8 @@ class Company(models.Model):
 
     #  Fields
     company_name = models.CharField(max_length=30)
+    company_id = models.UUIDField(
+        unique=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
@@ -43,6 +45,10 @@ class Profile(models.Model):
     phone_confirmed = models.BooleanField(default=False)
     image = models.ImageField(null=True, upload_to=customer_image_file_path)
     is_admin = models.BooleanField(default=False)
+
+    company_identificator = models.CharField(
+        max_length=255, null=True, blank=True)
+
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 

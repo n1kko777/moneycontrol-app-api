@@ -12,6 +12,7 @@ class CompanySerializer(serializers.ModelSerializer):
         model = models.Company
         fields = [
             "id",
+            "company_id",
             "company_name",
             "profiles",
             "created",
@@ -20,16 +21,21 @@ class CompanySerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "company_id",
         ]
 
     def create(self, validated_data):
-        profile = models.Profile.objects.get(
-            user=self.context['request'].user)
-        profile.is_admin = True
-        profile.save()
-
         instance = models.Company.objects.create(**validated_data)
-        instance.profiles.add(profile)
+
+        profiles = models.Profile.objects.all().filter(
+            user=self.context['request'].user)
+
+        for profile in profiles:
+            profile.is_admin = True
+
+            profile.company = instance
+            profile.company_identificator = instance.company_id
+            profile.save()
 
         return instance
 
@@ -47,6 +53,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "image",
             'is_admin',
             'company',
+            'company_identificator',
             "created",
             "last_updated",
         ]
@@ -55,6 +62,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             'is_admin',
             'company',
         ]
+
+    def create(self, validated_data):
+        instance = models.Profile.objects.create(**validated_data)
+        return instance
 
 
 class AccountSerializer(serializers.ModelSerializer):

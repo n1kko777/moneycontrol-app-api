@@ -17,11 +17,31 @@ class CompanyViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not models.Profile.objects.exists():
+            content = {'error': 'No profile created!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
+
     def get_queryset(self):
         """Return object for current authenticated user only"""
         # get profile of user
-        profiles = models.Profile.objects.filter(user=self.request.user)
-        return self.queryset.filter(profiles__in=profiles)
+        if models.Profile.objects.exists():
+            profiles = models.Profile.objects\
+                .all().filter(user=self.request.user)
+            return self.queryset.filter(profiles__in=profiles)
+
+        else:
+            content = {'error': 'No profile created!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -38,9 +58,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return object for current authenticated user only"""
-        profile = models.Profile.objects.get(user=self.request.user)
-        if profile.is_admin:
-            return models.Profile.objects.filter(company=profile.company)
+        # get profile of user
+        if models.Profile.objects.exists():
+            profiles = models.Profile.objects\
+                .all().filter(user=self.request.user)
+
+            for profile in profiles:
+                if profile.is_admin is True:
+                    return models.Profile.objects\
+                        .filter(company=profile.company)
+                else:
+                    return self.queryset.filter(user=self.request.user)
+
         else:
             return self.queryset.filter(user=self.request.user)
 
@@ -73,7 +102,8 @@ class ActionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Return object for current authenticated user only"""
         # get account of user
-        accounts = models.Account.objects.filter(user=self.request.user)
+        accounts = models.Account.objects\
+            .filter(user=self.request.user)
         return self.queryset.filter(account__in=accounts)
 
     def create(self, request, *args, **kwargs):
@@ -83,8 +113,8 @@ class ActionViewSet(viewsets.ModelViewSet):
         # check if requested account belongs to user
 
         try:
-            account = models.Account.objects.filter(
-                user=self.request.user).get(pk=self.request.data['account'])
+            account = models.Account.objects.filter(user=self.request.user)\
+                .get(pk=self.request.data['account'])
         except Exception as e:
             print(e)
             content = {'error': 'No such account'}
@@ -124,7 +154,8 @@ class TransferViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Return object for current authenticated user only"""
         # filter accounts by user
-        accounts = models.Account.objects.filter(user=self.request.user)
+        accounts = models.Account.objects\
+            .filter(user=self.request.user)
         return self.queryset.filter(from_account__in=accounts)
 
 
@@ -172,9 +203,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        # # get profile of user
-        profile = models.Profile.objects.get(user=self.request.user)
-        return models.Category.objects.filter(company=profile.company)
+        """Return object for current authenticated user only"""
+        # get profile of user
+        if models.Profile.objects.exists():
+            profiles = models.Profile.objects\
+                .all().filter(user=self.request.user)
+            for profile in profiles:
+                return models.Tag.objects.filter(company=profile.company)
+
+        else:
+            content = {'error': 'No profile created!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -191,6 +230,14 @@ class TagViewSet(viewsets.ModelViewSet):
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        # # get profile of user
-        profile = models.Profile.objects.get(user=self.request.user)
-        return models.Tag.objects.filter(company=profile.company)
+        """Return object for current authenticated user only"""
+        # get profile of user
+        if models.Profile.objects.exists():
+            profiles = models.Profile.objects\
+                .all().filter(user=self.request.user)
+            for profile in profiles:
+                return models.Tag.objects.filter(company=profile.company)
+
+        else:
+            content = {'error': 'No profile created!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
