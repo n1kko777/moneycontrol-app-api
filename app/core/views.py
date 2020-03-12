@@ -34,20 +34,50 @@ class CompanyViewSet(viewsets.ModelViewSet):
             headers=headers
         )
 
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user)[0].is_admin:
+            content = {'error': 'Only admin can update!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+            headers=headers
+        )
+
+    def destroy(self, request, pk=None):
+        instance = self.get_object()
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user)[0].is_admin:
+            content = {'error': 'Only admin can delete!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
     def perform_create(self, serializer):
         serializer.save()
 
-    # def get_queryset(self):
-    #     """Return object for current authenticated user only"""
-    #     # get profile of user
-    #     if models.Profile.objects.exists():
-    #         profiles = models.Profile.objects\
-    #             .all().filter(user=self.request.user)
-    #         return self.queryset.filter(profiles__in=profiles)
+    def get_queryset(self):
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            return self.queryset.filter(company_id=profile.company_identificator)
 
-    #     else:
-    #         content = {'error': 'No profile created!'}
-    #         return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            content = {'error': 'No profile created!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
