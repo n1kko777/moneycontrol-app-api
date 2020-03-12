@@ -76,10 +76,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return self.queryset\
                 .filter(company_id=profile.company_identificator)
 
-        else:
-            content = {'error': 'No profile created!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """ViewSet for the Profile class"""
@@ -189,6 +185,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.data,
             status=status.HTTP_200_OK,
             headers=headers
+        )
+
+    def destroy(self, request, pk=None):
+        instance = self.get_object()
+
+        if instance.is_admin:
+            models.Company.objects\
+                .get(company_id=instance.company_identificator)\
+                .delete()
+
+        instance.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )
 
 
