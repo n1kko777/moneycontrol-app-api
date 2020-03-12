@@ -6,7 +6,8 @@ from . import models
 class CompanySerializer(serializers.ModelSerializer):
     profiles = serializers.StringRelatedField(
         many=True,
-        read_only=True)
+        read_only=True
+    )
 
     class Meta:
         model = models.Company
@@ -30,12 +31,12 @@ class CompanySerializer(serializers.ModelSerializer):
         profiles = models.Profile.objects.all().filter(
             user=self.context['request'].user)
 
-        for profile in profiles:
-            profile.is_admin = True
+        profile = profiles[0]
+        profile.is_admin = True
 
-            profile.company = instance
-            profile.company_identificator = instance.company_id
-            profile.save()
+        profile.company = instance
+        profile.company_identificator = instance.company_id
+        profile.save()
 
         return instance
 

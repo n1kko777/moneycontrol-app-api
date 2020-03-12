@@ -21,27 +21,33 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if not models.Profile.objects.exists():
-            content = {'error': 'No profile created!'}
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user).exists():
+            content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
-
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED,
-                        headers=headers)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
-    def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # get profile of user
-        if models.Profile.objects.exists():
-            profiles = models.Profile.objects\
-                .all().filter(user=self.request.user)
-            return self.queryset.filter(profiles__in=profiles)
+    def perform_create(self, serializer):
+        serializer.save()
 
-        else:
-            content = {'error': 'No profile created!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+    # def get_queryset(self):
+    #     """Return object for current authenticated user only"""
+    #     # get profile of user
+    #     if models.Profile.objects.exists():
+    #         profiles = models.Profile.objects\
+    #             .all().filter(user=self.request.user)
+    #         return self.queryset.filter(profiles__in=profiles)
+
+    #     else:
+    #         content = {'error': 'No profile created!'}
+    #         return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -52,26 +58,36 @@ class ProfileViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Profile.objects.all()\
+                .filter(user=self.request.user).exists():
+            content = {'error': 'You can have only one profile!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
     def perform_create(self, serializer):
         """Create a new pfofile"""
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
         """Return object for current authenticated user only"""
-        # get profile of user
-        if models.Profile.objects.exists():
-            profiles = models.Profile.objects\
-                .all().filter(user=self.request.user)
+        profiles = self.queryset.filter(user=self.request.user)
 
-            for profile in profiles:
-                if profile.is_admin is True:
-                    return models.Profile.objects\
-                        .filter(company=profile.company)
-                else:
-                    return self.queryset.filter(user=self.request.user)
+        if profiles.exists() and profiles[0].is_admin is True:
+            profiles = models.Profile.objects.filter(
+                company=profiles[0].company)
 
-        else:
-            return self.queryset.filter(user=self.request.user)
+        return profiles
 
 
 class AccountViewSet(viewsets.ModelViewSet):

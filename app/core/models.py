@@ -28,7 +28,7 @@ class Company(models.Model):
 class Profile(models.Model):
 
     #  Relationships
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     company = models.ForeignKey(
         'Company',
