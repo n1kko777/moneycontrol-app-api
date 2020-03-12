@@ -12,17 +12,17 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Company
         fields = [
-            "id",
-            "company_id",
-            "company_name",
-            "profiles",
-            "created",
-            "last_updated",
+            'id',
+            'company_id',
+            'company_name',
+            'profiles',
+            'created',
+            'last_updated',
         ]
 
         read_only_fields = [
-            "id",
-            "company_id",
+            'id',
+            'company_id',
         ]
 
     def create(self, validated_data):
@@ -47,16 +47,16 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = models.Profile
         fields = [
             'id',
-            "first_name",
-            "last_name",
-            "phone",
-            "phone_confirmed",
-            "image",
+            'first_name',
+            'last_name',
+            'phone',
+            'phone_confirmed',
+            'image',
             'is_admin',
             'company',
             'company_identificator',
-            "created",
-            "last_updated",
+            'created',
+            'last_updated',
         ]
 
         read_only_fields = [
@@ -73,6 +73,38 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def update(self, instance, validated_data):
+        instance.company_identificator = validated_data.get(
+            'company_identificator', instance.company_identificator)
+        instance.company = validated_data.get('company', instance.company)
+
+        if instance.company_identificator is None or\
+                instance.company_identificator is "":
+            instance.company_identificator = None
+            instance.company = None
+        else:
+            company = models.Company.objects.get(
+                company_id=instance.company_identificator)
+            instance.company = company
+
+        instance.id = validated_data.get('id', instance.id)
+        instance.first_name = validated_data.get(
+            'first_name', instance.first_name)
+        instance.last_name = validated_data.get(
+            'last_name', instance.last_name)
+        instance.phone = validated_data.get('phone', instance.phone)
+        instance.phone_confirmed = validated_data.get(
+            'phone_confirmed', instance.phone_confirmed)
+        instance.image = validated_data.get('image', instance.image)
+        instance.is_admin = validated_data.get('is_admin', instance.is_admin)
+        instance.created = validated_data.get('created', instance.created)
+        instance.last_updated = validated_data.get(
+            'last_updated', instance.last_updated)
+
+        instance.save()
+
+        return instance
+
 
 class AccountSerializer(serializers.ModelSerializer):
 
@@ -81,10 +113,10 @@ class AccountSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'balance',
-            "account_name",
-            "account_color",
-            "last_updated",
-            "created",
+            'account_name',
+            'account_color',
+            'last_updated',
+            'created',
         ]
 
         read_only_fields = ('id',)
@@ -99,8 +131,8 @@ class ActionSerializer(serializers.ModelSerializer):
             'account',
             'action_amount',
             'tags',
-            "created",
-            "last_updated",
+            'created',
+            'last_updated',
         )
         read_only_fields = ('id',)
 
@@ -129,7 +161,7 @@ class TransferSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(e)
             raise serializers.ValidationError(
-                "No such account from serializer")
+                'No such account from serializer')
         return data
 
     class Meta:
@@ -138,9 +170,9 @@ class TransferSerializer(serializers.ModelSerializer):
             'id',
             'from_account',
             'to_account',
-            "transfer_amount",
-            "last_updated",
-            "created",
+            'transfer_amount',
+            'last_updated',
+            'created',
         ]
         read_only_fields = ('id', )
 
@@ -155,8 +187,8 @@ class TransactionSerializer(serializers.ModelSerializer):
             'category',
             'tags',
             'transaction_amount',
-            "last_updated",
-            "created",
+            'last_updated',
+            'created',
         )
         read_only_fields = ('id', )
 
@@ -166,10 +198,10 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
         fields = [
-            "caterory_name",
-            "category_color",
-            "created",
-            "last_updated",
+            'caterory_name',
+            'category_color',
+            'created',
+            'last_updated',
         ]
 
         read_only_fields = ['id', 'company']
@@ -180,10 +212,10 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Tag
         fields = [
-            "tag_name",
-            "tag_color",
-            "created",
-            "last_updated",
+            'tag_name',
+            'tag_color',
+            'created',
+            'last_updated',
         ]
 
         read_only_fields = ['id', 'company']

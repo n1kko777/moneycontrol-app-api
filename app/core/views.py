@@ -89,6 +89,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def perform_create(self, serializer):
+        """Create a new pfofile"""
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        """Return object for current authenticated user only"""
+        profiles = self.queryset.filter(user=self.request.user)
+
+        if profiles.exists() and profiles[0].is_admin is True:
+            profiles = models.Profile.objects.filter(
+                company=profiles[0].company)
+
+        return profiles
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -98,7 +112,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             content = {'error': 'You can have only one profile!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        if 'company_identificator' in self.request.data:
+        if 'company_identificator' in self.request.data\
+                and self.request.data['company_identificator'] is not "":
             identificator = self.request.data['company_identificator']
             try:
                 company = models.Company.objects.get(company_id=identificator)
@@ -120,19 +135,61 @@ class ProfileViewSet(viewsets.ModelViewSet):
             headers=headers
         )
 
-    def perform_create(self, serializer):
-        """Create a new pfofile"""
-        serializer.save(user=self.request.user)
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    def get_queryset(self):
-        """Return object for current authenticated user only"""
-        profiles = self.queryset.filter(user=self.request.user)
+        if 'company_identificator' in self.request.data\
+                and self.request.data['company_identificator'] is not "":
+            identificator = self.request.data['company_identificator']
+            try:
+                company = models.Company.objects.get(company_id=identificator)
+                if not company:
+                    raise Exception()
 
-        if profiles.exists() and profiles[0].is_admin is True:
-            profiles = models.Profile.objects.filter(
-                company=profiles[0].company)
+            except Exception as e:
+                print(e)
+                content = {
+                    "error": "Identificator is incorrect. "
+                    + "Keep the field empty, if you don't know."}
+                return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        return profiles
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+            headers=headers
+        )
+
+    def partial_update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if 'company_identificator' in self.request.data\
+                and self.request.data['company_identificator'] is not "":
+            identificator = self.request.data['company_identificator']
+            try:
+                company = models.Company.objects.get(company_id=identificator)
+                if not company:
+                    raise Exception()
+
+            except Exception as e:
+                print(e)
+                content = {
+                    "error": "Identificator is incorrect. "
+                    + "Keep the field empty, if you don't know."}
+                return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+            headers=headers
+        )
 
 
 class AccountViewSet(viewsets.ModelViewSet):
