@@ -59,9 +59,9 @@ class Profile(models.Model):
 class Account(models.Model):
 
     #  Relationships
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,  # we cannot delete user with money
+    profile = models.ForeignKey(
+        'Profile',
+        on_delete=models.CASCADE,
     )
 
     #  Fields

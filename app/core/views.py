@@ -209,13 +209,40 @@ class AccountViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user).exists():
+            content = {'error': 'No Profile was found!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
     def perform_create(self, serializer):
         """Create a new account"""
-        serializer.save(user=self.request.user)
+        profile = models.Profile.objects.get(user=self.request.user)
+        serializer.save(profile=profile)
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        return self.queryset.filter(user=self.request.user)
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            profiles = models.Profile.objects\
+                .all().filter(company=profile.company)
+
+            if profile.is_admin:
+                return models.Account.objects.filter(profile__in=profiles)
+
+            return models.Account.objects.filter(profile=profile)
 
 
 class ActionViewSet(viewsets.ModelViewSet):
@@ -227,11 +254,15 @@ class ActionViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # get account of user
-        accounts = models.Account.objects\
-            .filter(user=self.request.user)
-        return self.queryset.filter(account__in=accounts)
+        if models.Profile.objects.exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            profiles = models.Profile.objects\
+                .all().filter(company=profile.company)
+            accounts = models.Account.objects\
+                .filter(profile__in=profiles)
+
+            return self.queryset.filter(account__in=accounts)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -240,7 +271,9 @@ class ActionViewSet(viewsets.ModelViewSet):
         # check if requested account belongs to user
 
         try:
-            account = models.Account.objects.filter(user=self.request.user)\
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            account = models.Account.objects.filter(profile=profile)\
                 .get(pk=self.request.data['account'])
         except Exception as e:
             print(e)
@@ -268,7 +301,8 @@ class TransferViewSet(viewsets.ModelViewSet):
 
         try:
             make_transfer(**serializer.validated_data)
-        except ValueError:
+        except Exception as e:
+            print(e)
             content = {
                 'error': 'Not enough money or to_account not in your company'
             }
@@ -279,11 +313,15 @@ class TransferViewSet(viewsets.ModelViewSet):
                         headers=headers)
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # filter accounts by user
-        accounts = models.Account.objects\
-            .filter(user=self.request.user)
-        return self.queryset.filter(from_account__in=accounts)
+        if models.Profile.objects.exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            profiles = models.Profile.objects\
+                .all().filter(company=profile.company)
+            accounts = models.Account.objects\
+                .filter(profile__in=profiles)
+
+            return self.queryset.filter(from_account__in=accounts)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
@@ -310,10 +348,16 @@ class TransactionViewSet(viewsets.ModelViewSet):
                         headers=headers)
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # get account of user
-        accounts = models.Account.objects.filter(user=self.request.user)
-        return self.queryset.filter(account__in=accounts)
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            profiles = models.Profile.objects\
+                .all().filter(company=profile.company)
+            accounts = models.Account.objects\
+                .filter(profile__in=profiles)
+
+            return self.queryset.filter(account__in=accounts)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -324,13 +368,39 @@ class CategoryViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Profile.objects.exists():
+            profile = models.Profile.objects.all()\
+                .filter(user=self.request.user)[0]
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user).exists():
+            content = {'error': 'No Profile was found!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        if not profile.company:
+            content = {'error': 'No Company was found!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
     def perform_create(self, serializer):
-        """Create a new tag"""
+        """Create a new category"""
         profile = models.Profile.objects.get(user=self.request.user)
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        if models.Profile.objects.exists():
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
             profiles = models.Profile.objects\
                 .all().filter(user=self.request.user)
             profile = profiles[0]
@@ -345,13 +415,40 @@ class TagViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
+            profile = models.Profile.objects.all()\
+                .filter(user=self.request.user)[0]
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user).exists():
+            content = {'error': 'No Profile was found!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        if not profile.company:
+            content = {'error': 'No Company was found!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
     def perform_create(self, serializer):
         """Create a new tag"""
         profile = models.Profile.objects.get(user=self.request.user)
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        if models.Profile.objects.exists():
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
             profiles = models.Profile.objects\
                 .all().filter(user=self.request.user)
             profile = profiles[0]
