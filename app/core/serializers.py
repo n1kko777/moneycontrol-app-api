@@ -66,6 +66,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = models.Profile.objects.create(**validated_data)
+        company = models.Company.objects.get(
+            company_id=instance.company_identificator)
+
+        instance.company = company
+        instance.save()
         return instance
 
 

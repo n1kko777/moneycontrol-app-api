@@ -97,6 +97,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
             content = {'error': 'You can have only one profile!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        if 'company_identificator' in self.request.data:
+            identificator = self.request.data['company_identificator']
+            try:
+                company = models.Company.objects.get(company_id=identificator)
+                if not company:
+                    raise Exception()
+
+            except Exception as e:
+                print(e)
+                content = {
+                    "error": "Identificator is incorrect. Keep the field empty, if you don't know."}
+                return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
