@@ -330,17 +330,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # get profile of user
         if models.Profile.objects.exists():
             profiles = models.Profile.objects\
                 .all().filter(user=self.request.user)
-            for profile in profiles:
-                return models.Tag.objects.filter(company=profile.company)
-
-        else:
-            content = {'error': 'No profile created!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+            profile = profiles[0]
+            return models.Category.objects.filter(company=profile.company)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -357,14 +351,8 @@ class TagViewSet(viewsets.ModelViewSet):
         serializer.save(company=profile.company)
 
     def get_queryset(self):
-        """Return object for current authenticated user only"""
-        # get profile of user
         if models.Profile.objects.exists():
             profiles = models.Profile.objects\
                 .all().filter(user=self.request.user)
-            for profile in profiles:
-                return models.Tag.objects.filter(company=profile.company)
-
-        else:
-            content = {'error': 'No profile created!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+            profile = profiles[0]
+            return models.Tag.objects.filter(company=profile.company)
