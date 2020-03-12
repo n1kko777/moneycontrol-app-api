@@ -73,7 +73,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 .all().filter(user=self.request.user).exists():
             profile = models.Profile.objects\
                 .all().filter(user=self.request.user)[0]
-            return self.queryset.filter(company_id=profile.company_identificator)
+            return self.queryset\
+                .filter(company_id=profile.company_identificator)
 
         else:
             content = {'error': 'No profile created!'}
@@ -107,7 +108,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 print(e)
                 content = {
-                    "error": "Identificator is incorrect. Keep the field empty, if you don't know."}
+                    "error": "Identificator is incorrect. "
+                    + "Keep the field empty, if you don't know."}
                 return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
