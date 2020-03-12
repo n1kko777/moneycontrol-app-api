@@ -18,6 +18,7 @@ class Company(models.Model):
     company_name = models.CharField(max_length=30)
     company_id = models.UUIDField(
         unique=True, default=uuid.uuid4, editable=False)
+
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
@@ -66,10 +67,11 @@ class Account(models.Model):
 
     #  Fields
     balance = models.DecimalField(default=0, max_digits=10, decimal_places=2)
-    last_updated = models.DateTimeField(auto_now=True, editable=False)
     account_name = models.CharField(max_length=30)
     account_color = models.CharField(max_length=30)
+
     created = models.DateTimeField(auto_now_add=True, editable=False)
+    last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
         return f'{self.account_name} (pk={self.pk})'
@@ -85,8 +87,9 @@ class Action(models.Model):
     tags = models.ManyToManyField("Tag", blank=True)
 
     #  Fields
-    created = models.DateTimeField(auto_now_add=True, editable=False)
     action_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
@@ -102,9 +105,10 @@ class Transfer(models.Model):
         "Account", on_delete=models.CASCADE, related_name='to_account')
 
     #  Fields
-    last_updated = models.DateTimeField(auto_now=True, editable=False)
-    created = models.DateTimeField(auto_now_add=True, editable=False)
     transfer_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+    last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
         return str(self.pk)
@@ -119,9 +123,10 @@ class Transaction(models.Model):
     category = models.ForeignKey("Category", on_delete=models.CASCADE)
 
     #  Fields
-    last_updated = models.DateTimeField(auto_now=True, editable=False)
-    created = models.DateTimeField(auto_now_add=True, editable=False)
     transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+    last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
         return str(self.pk)
@@ -154,10 +159,11 @@ class Category(models.Model):
     )
 
     #  Fields
-    created = models.DateTimeField(auto_now_add=True, editable=False)
     category_color = models.CharField(max_length=30)
-    last_updated = models.DateTimeField(auto_now=True, editable=False)
     caterory_name = models.CharField(max_length=30, unique=True)
+
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+    last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
         return f'{self.caterory_name} (pk={self.pk})'
@@ -172,10 +178,11 @@ class Tag(models.Model):
     )
 
     #  Fields
+    tag_name = models.CharField(max_length=30, unique=True)
+    tag_color = models.CharField(max_length=30)
+
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
-    tag_color = models.CharField(max_length=30)
-    tag_name = models.CharField(max_length=30, unique=True)
 
     def __str__(self):
         return f'{self.tag_name} (pk={self.pk})'
