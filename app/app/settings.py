@@ -165,5 +165,8 @@ AUTHENTICATION_BACKENDS = (
     "allauth.account.auth_backends.AuthenticationBackend",
 )
 
-LOGIN_URL = 'rest_framework:login'
-LOGOUT_URL = 'rest_framework:logout'
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'LOGIN_URL': 'rest_framework:login',
+    'LOGOUT_URL': 'rest_framework:logout',
+}
