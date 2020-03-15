@@ -136,6 +136,9 @@ STATIC_ROOT = './vol/web/static'
 AUTH_USER_MODEL = 'users.CustomUser'
 
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # enable session auth if you want to use drf web api
         'rest_framework.authentication.SessionAuthentication',
