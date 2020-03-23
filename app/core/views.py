@@ -253,17 +253,6 @@ class ActionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
-    def get_queryset(self):
-        if models.Profile.objects.exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            profiles = models.Profile.objects\
-                .all().filter(company=profile.company)
-            accounts = models.Account.objects\
-                .filter(profile__in=profiles)
-
-            return self.queryset.filter(account__in=accounts)
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -285,6 +274,23 @@ class ActionViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
+
+    def get_queryset(self):
+        if models.Profile.objects\
+                .all().filter(user=self.request.user).exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            profiles = models.Profile.objects\
+                .all().filter(company=profile.company)
+
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(profile__in=profiles)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile)
+
+            return self.queryset.filter(account__in=accounts)
 
 
 class TransferViewSet(viewsets.ModelViewSet):
@@ -318,10 +324,15 @@ class TransferViewSet(viewsets.ModelViewSet):
                 .all().filter(user=self.request.user)[0]
             profiles = models.Profile.objects\
                 .all().filter(company=profile.company)
-            accounts = models.Account.objects\
-                .filter(profile__in=profiles)
 
-            return self.queryset.filter(from_account__in=accounts)
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(profile__in=profiles)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile)
+
+            return self.queryset.filter(account__in=accounts)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
@@ -354,8 +365,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 .all().filter(user=self.request.user)[0]
             profiles = models.Profile.objects\
                 .all().filter(company=profile.company)
-            accounts = models.Account.objects\
-                .filter(profile__in=profiles)
+
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(profile__in=profiles)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile)
 
             return self.queryset.filter(account__in=accounts)
 
