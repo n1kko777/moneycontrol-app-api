@@ -1,4 +1,4 @@
-from .models import Transfer, Profile
+from .models import Transfer
 from django.db import transaction
 
 
@@ -9,8 +9,8 @@ def make_transfer(from_account, to_account, transfer_amount):
     if from_account == to_account:
         raise(ValueError('Chose another account'))
 
-    from_company = Profile.objects.get(user=from_account.user).company
-    to_company = Profile.objects.get(user=to_account.user).company
+    from_company = from_account.profile.company
+    to_company = to_account.profile.company
 
     if from_company != to_company:
         raise(ValueError('To_account is not in your company!'))
