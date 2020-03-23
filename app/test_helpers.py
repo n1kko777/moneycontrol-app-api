@@ -83,7 +83,7 @@ def create_core_Action(**kwargs):
 def create_core_Category(**kwargs):
     defaults = {}
     defaults["category_color"] = ""
-    defaults["caterory_name"] = ""
+    defaults["category_name"] = ""
     if "profile" not in kwargs:
         defaults["profile"] = create_core_Profile()
     defaults.update(**kwargs)

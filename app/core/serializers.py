@@ -209,7 +209,8 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
         fields = [
-            'caterory_name',
+            'id',
+            'category_name',
             'category_color',
             'created',
             'last_updated',

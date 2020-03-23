@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('category_color', models.CharField(max_length=30)),
                 ('last_updated', models.DateTimeField(auto_now=True)),
-                ('caterory_name', models.CharField(max_length=30, unique=True)),
+                ('category_name', models.CharField(max_length=30, unique=True)),
             ],
         ),
         migrations.CreateModel(

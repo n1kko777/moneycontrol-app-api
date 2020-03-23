@@ -160,13 +160,13 @@ class Category(models.Model):
 
     #  Fields
     category_color = models.CharField(max_length=30)
-    caterory_name = models.CharField(max_length=30, unique=True)
+    category_name = models.CharField(max_length=30, unique=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
-        return f'{self.caterory_name} (pk={self.pk})'
+        return f'{self.category_name} (pk={self.pk})'
 
 
 class Tag(models.Model):

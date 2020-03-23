@@ -73,7 +73,7 @@ def tests_Category_create_view():
     client = Client()
     url = reverse("core_Category_create")
     data = {
-        "caterory_name": "text",
+        "category_name": "text",
         "category_color": "text",
         "company": company.pk,
     }
@@ -96,7 +96,7 @@ def tests_Category_update_view():
     instance = test_helpers.create_core_Category()
     url = reverse("core_Category_update", args=[instance.pk, ])
     data = {
-        "caterory_name": "text",
+        "category_name": "text",
         "category_color": "text",
         "company": company.pk,
     }
