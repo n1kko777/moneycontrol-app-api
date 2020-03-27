@@ -332,7 +332,8 @@ class TransferViewSet(viewsets.ModelViewSet):
                 accounts = models.Account.objects\
                     .filter(profile=profile)
 
-            return self.queryset.filter(from_account__in=accounts)
+            return self.queryset.filter(from_account__in=accounts) \
+                or self.queryset.filter(to_account__in=accounts)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
