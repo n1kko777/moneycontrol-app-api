@@ -3,45 +3,9 @@ from rest_framework import serializers
 from . import models
 
 
-class CompanySerializer(serializers.ModelSerializer):
-    profiles = serializers.StringRelatedField(
-        many=True,
-        read_only=True
-    )
-
-    class Meta:
-        model = models.Company
-        fields = [
-            'id',
-            'company_id',
-            'company_name',
-            'profiles',
-            'created',
-            'last_updated',
-        ]
-
-        read_only_fields = [
-            'id',
-            'company_id',
-        ]
-
-    def create(self, validated_data):
-        instance = models.Company.objects.create(**validated_data)
-
-        profiles = models.Profile.objects.all().filter(
-            user=self.context['request'].user)
-
-        profile = profiles[0]
-        profile.is_admin = True
-
-        profile.company = instance
-        profile.company_identificator = instance.company_id
-        profile.save()
-
-        return instance
-
-
 class ProfileSerializer(serializers.ModelSerializer):
+
+    accounts = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = models.Profile
@@ -49,6 +13,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'id',
             'first_name',
             'last_name',
+            'accounts',
             'phone',
             'phone_confirmed',
             'image',
@@ -61,6 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'is_admin',
+            'accounts',
             'company',
         ]
 
@@ -131,6 +97,44 @@ class AccountSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = ('id', 'profile')
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    profiles = ProfileSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Company
+        fields = [
+            'id',
+            'company_id',
+            'company_name',
+            'profiles',
+            'created',
+            'last_updated',
+        ]
+
+        read_only_fields = [
+            'id',
+            'company_id',
+        ]
+
+    def create(self, validated_data):
+        instance = models.Company.objects.create(**validated_data)
+
+        profiles = models.Profile.objects.all().filter(
+            user=self.context['request'].user)
+
+        profile = profiles[0]
+        profile.is_admin = True
+
+        profile.company = instance
+        profile.company_identificator = instance.company_id
+        profile.save()
+
+        return instance
 
 
 class ActionSerializer(serializers.ModelSerializer):

@@ -62,6 +62,7 @@ class Account(models.Model):
     #  Relationships
     profile = models.ForeignKey(
         'Profile',
+        related_name="accounts",
         on_delete=models.CASCADE,
     )
 
