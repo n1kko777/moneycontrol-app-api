@@ -233,6 +233,7 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Tag
         fields = [
+            'id',
             'tag_name',
             'tag_color',
             'created',
