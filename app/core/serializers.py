@@ -201,6 +201,7 @@ class TransferSerializer(serializers.ModelSerializer):
 
 class TransactionSerializer(serializers.ModelSerializer):
 
+    category = serializers.StringRelatedField()
     tags = serializers.StringRelatedField(many=True)
 
     class Meta:
