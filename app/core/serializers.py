@@ -139,6 +139,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
 class ActionSerializer(serializers.ModelSerializer):
 
+    tags = serializers.StringRelatedField(many=True)
+
     class Meta:
         model = models.Action
         fields = (
@@ -198,6 +200,8 @@ class TransferSerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+
+    tags = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = models.Transaction
