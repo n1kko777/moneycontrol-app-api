@@ -18,6 +18,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'phone_confirmed',
             'image',
             'is_admin',
+            'is_active',
             'company',
             'company_identificator',
             'created',
@@ -48,6 +49,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             'company_identificator', instance.company_identificator)
         instance.company = validated_data.get('company', instance.company)
         instance.is_admin = validated_data.get('is_admin', instance.is_admin)
+        instance.is_active = validated_data.get(
+            'is_active', instance.is_active)
 
         if instance.company_identificator is None or\
                 instance.company_identificator is "":
@@ -90,6 +93,7 @@ class AccountSerializer(serializers.ModelSerializer):
             'profile',
             'id',
             'balance',
+            'is_active',
             'account_name',
             'account_color',
             'last_updated',
@@ -145,6 +149,7 @@ class ActionSerializer(serializers.ModelSerializer):
             'id',
             'account',
             'action_amount',
+            'is_active',
             'tags',
             'created',
             'last_updated',
@@ -190,6 +195,7 @@ class TransferSerializer(serializers.ModelSerializer):
             'from_profile',
             'to_account',
             'to_profile',
+            'is_active',
             'transfer_amount',
             'last_updated',
             'created',
@@ -205,6 +211,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id',
             'account',
             'category',
+            'is_active',
             'tags',
             'transaction_amount',
             'last_updated',
@@ -221,6 +228,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'id',
             'category_name',
             'category_color',
+            'is_active',
             'created',
             'last_updated',
         ]
@@ -236,6 +244,7 @@ class TagSerializer(serializers.ModelSerializer):
             'id',
             'tag_name',
             'tag_color',
+            'is_active',
             'created',
             'last_updated',
         ]

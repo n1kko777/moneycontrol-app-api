@@ -46,6 +46,7 @@ class Profile(models.Model):
     phone_confirmed = models.BooleanField(default=False)
     image = models.ImageField(null=True, upload_to=customer_image_file_path)
     is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     company_identificator = models.CharField(
         max_length=255, null=True, blank=True)
@@ -69,7 +70,8 @@ class Account(models.Model):
     #  Fields
     balance = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     account_name = models.CharField(max_length=30)
-    account_color = models.CharField(max_length=30)
+    account_color = models.CharField(max_length=30, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -89,6 +91,7 @@ class Action(models.Model):
 
     #  Fields
     action_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -107,6 +110,7 @@ class Transfer(models.Model):
 
     #  Fields
     transfer_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -125,6 +129,7 @@ class Transaction(models.Model):
 
     #  Fields
     transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -160,8 +165,9 @@ class Category(models.Model):
     )
 
     #  Fields
-    category_color = models.CharField(max_length=30)
-    category_name = models.CharField(max_length=30, unique=True)
+    category_color = models.CharField(max_length=30, blank=True, null=True)
+    category_name = models.CharField(max_length=30)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -179,8 +185,9 @@ class Tag(models.Model):
     )
 
     #  Fields
-    tag_name = models.CharField(max_length=30, unique=True)
-    tag_color = models.CharField(max_length=30)
+    tag_name = models.CharField(max_length=30)
+    tag_color = models.CharField(max_length=30, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now=True, editable=False)
