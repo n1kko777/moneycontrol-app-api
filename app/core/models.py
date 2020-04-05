@@ -77,7 +77,10 @@ class Account(models.Model):
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
-        return f'{self.account_name} (pk={self.pk})'
+        if self.is_active:
+            return f'{self.account_name} (pk={self.pk})'
+        else:
+            return ""
 
 
 class Action(models.Model):
