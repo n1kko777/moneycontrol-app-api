@@ -174,12 +174,10 @@ class TransferSerializer(serializers.ModelSerializer):
 
     from_profile = serializers.CharField(
         source="from_account.profile", read_only=True)
-    from_profile_account = serializers.CharField(read_only=True)
     from_account = serializers.CharField()
 
     to_profile = serializers.CharField(
         source="to_account.profile", read_only=True)
-    to_profile_account = serializers.CharField(read_only=True)
     to_account = serializers.CharField()
 
     def validate(self, data):
@@ -205,18 +203,16 @@ class TransferSerializer(serializers.ModelSerializer):
             'id',
             'from_account',
             'from_profile',
-            'from_profile_account',
             'to_account',
             'to_profile',
-            'to_profile_account',
             'is_active',
             'transfer_amount',
             'last_updated',
             'created',
         ]
         read_only_fields = (
-            'id', 'from_profile', 'from_profile_account',
-            'to_profile', 'to_profile_account', )
+            'id', 'from_profile',
+            'to_profile', )
 
 
 class TransactionSerializer(serializers.ModelSerializer):
