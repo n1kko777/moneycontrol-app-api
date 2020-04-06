@@ -2,7 +2,7 @@ from .models import Transfer
 from django.db import transaction
 
 
-def make_transfer(from_account, to_account, transfer_amount):
+def make_transfer(from_account, to_account, transfer_amount, **args):
 
     if from_account.balance < transfer_amount:
         raise(ValueError('Not enough money'))

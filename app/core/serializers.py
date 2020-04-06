@@ -172,19 +172,31 @@ class ActionSerializer(serializers.ModelSerializer):
 
 class TransferSerializer(serializers.ModelSerializer):
 
-    from_profile = serializers.CharField(source="from_account.profile")
+    from_profile = serializers.CharField(
+        source="from_account.profile", read_only=True)
+    from_profile_account = serializers.CharField(read_only=True)
     from_account = serializers.CharField()
-    to_profile = serializers.CharField(source="to_account.profile")
+
+    to_profile = serializers.CharField(
+        source="to_account.profile", read_only=True)
+    to_profile_account = serializers.CharField(read_only=True)
     to_account = serializers.CharField()
 
     def validate(self, data):
+        try:
+            data['from_account'] = models.Account.objects.get(
+                pk=data['from_account'])
+        except Exception as e:
+            print(e)
+            raise serializers.ValidationError(
+                'No such account from serializer')
         try:
             data['to_account'] = models.Account.objects.get(
                 pk=data['to_account'])
         except Exception as e:
             print(e)
             raise serializers.ValidationError(
-                'No such account from serializer')
+                'No such account to serializer')
         return data
 
     class Meta:
@@ -193,14 +205,18 @@ class TransferSerializer(serializers.ModelSerializer):
             'id',
             'from_account',
             'from_profile',
+            'from_profile_account',
             'to_account',
             'to_profile',
+            'to_profile_account',
             'is_active',
             'transfer_amount',
             'last_updated',
             'created',
         ]
-        read_only_fields = ('id', 'from_profile', 'to_profile', )
+        read_only_fields = (
+            'id', 'from_profile', 'from_profile_account',
+            'to_profile', 'to_profile_account', )
 
 
 class TransactionSerializer(serializers.ModelSerializer):
