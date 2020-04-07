@@ -143,11 +143,15 @@ class CompanySerializer(serializers.ModelSerializer):
 
 class ActionSerializer(serializers.ModelSerializer):
 
+    profile_name = serializers.CharField(
+        source="account.profile", read_only=True)
+
     class Meta:
         model = models.Action
         fields = (
             'id',
             'account',
+            'profile_name',
             'action_amount',
             'is_active',
             'tags',
@@ -217,11 +221,15 @@ class TransferSerializer(serializers.ModelSerializer):
 
 class TransactionSerializer(serializers.ModelSerializer):
 
+    profile_name = serializers.CharField(
+        source="account.profile", read_only=True)
+
     class Meta:
         model = models.Transaction
         fields = (
             'id',
             'account',
+            'profile_name',
             'category',
             'is_active',
             'tags',
