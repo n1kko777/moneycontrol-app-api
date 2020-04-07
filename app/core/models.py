@@ -141,7 +141,8 @@ class Transaction(models.Model):
         return str(self.pk)
 
     @classmethod
-    def make_transaction(cls, transaction_amount, account, category, tags, **args):
+    def make_transaction(cls, transaction_amount, account,
+                         category, tags, **args):
         if account.balance < transaction_amount:
             raise(ValueError('Not enough money'))
 
