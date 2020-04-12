@@ -34,7 +34,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = models.Profile.objects.create(**validated_data)
         if instance.company_identificator is not None and\
-                instance.company_identificator is not "":
+                str(instance.company_identificator) != "":
             company = models.Company.objects.get(
                 company_id=instance.company_identificator)
             instance.company = company
@@ -53,7 +53,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'is_active', instance.is_active)
 
         if instance.company_identificator is None or\
-                instance.company_identificator is "":
+                str(instance.company_identificator) == "":
             instance.company_identificator = None
 
             company = instance.company

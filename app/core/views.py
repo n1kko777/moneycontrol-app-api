@@ -109,7 +109,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] is not "":
+                and self.request.data['company_identificator'] != "":
             identificator = self.request.data['company_identificator']
             try:
                 company = models.Company.objects.get(company_id=identificator)
@@ -137,7 +137,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] is not "":
+                and self.request.data['company_identificator'] != "":
             identificator = self.request.data['company_identificator']
             try:
                 company = models.Company.objects.get(company_id=identificator)
@@ -165,7 +165,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] is not "":
+                and self.request.data['company_identificator'] != "":
             identificator = self.request.data['company_identificator']
             try:
                 company = models.Company.objects.get(company_id=identificator)
