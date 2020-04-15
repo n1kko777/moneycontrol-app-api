@@ -26,6 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = [
+            'id',
             'is_admin',
             'accounts',
             'company',
@@ -90,8 +91,8 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Account
         fields = [
-            'profile',
             'id',
+            'profile',
             'balance',
             'is_active',
             'account_name',

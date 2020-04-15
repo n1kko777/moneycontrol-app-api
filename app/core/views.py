@@ -332,6 +332,23 @@ class TransferViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        to_account = models.Account.objects.get(id=instance.to_account.id)
+
+        if to_account.balance < instance.transfer_amount:
+            content = {'error': 'Недостаточно средств'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        to_account.balance -= instance.transfer_amount
+        to_account.save()
+
+        from_account = models.Account.objects.get(id=instance.from_account.id)
+        from_account.balance += instance.transfer_amount
+        from_account.save()
+        return super(TransferViewSet, self)\
+            .destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         if models.Profile.objects.exists():
             profile = models.Profile.objects\
