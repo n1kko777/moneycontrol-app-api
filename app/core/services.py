@@ -5,7 +5,7 @@ from django.db import transaction
 def make_transfer(from_account, to_account, transfer_amount, **args):
 
     if from_account.balance < transfer_amount:
-        raise(ValueError('Not enough money'))
+        raise(ValueError('Недостаточно средств'))
     if from_account == to_account:
         raise(ValueError('Chose another account'))
 

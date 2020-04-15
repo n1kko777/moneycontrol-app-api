@@ -275,6 +275,19 @@ class ActionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        account = models.Account.objects.get(id=instance.account.id)
+
+        if account.balance < instance.action_amount:
+            content = {'error': 'Недостаточно средств'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        account.balance -= instance.action_amount
+        account.save()
+        return super(ActionViewSet, self)\
+            .destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         if models.Profile.objects\
                 .all().filter(user=self.request.user).exists():
@@ -310,7 +323,8 @@ class TransferViewSet(viewsets.ModelViewSet):
         except Exception as e:
             print(e)
             content = {
-                'error': 'Not enough money or to_account not in your company'
+                'error': 'Недостаточно средств ' +
+                'или неверно указан счет получателя.'
             }
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -352,7 +366,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         try:
             models.Transaction.make_transaction(**serializer.validated_data)
         except ValueError:
-            content = {'error': 'Not enough money'}
+            content = {'error': 'Недостаточно средств'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         headers = self.get_success_headers(serializer.data)

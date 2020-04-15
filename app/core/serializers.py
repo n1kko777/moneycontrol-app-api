@@ -168,7 +168,7 @@ class ActionSerializer(serializers.ModelSerializer):
             validated_data['account'].save()
         else:
             raise serializers.ValidationError(
-                ('Not enough money')
+                ('Недостаточно средств')
             )
 
         return super(ActionSerializer, self).create(validated_data)

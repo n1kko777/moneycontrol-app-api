@@ -144,7 +144,7 @@ class Transaction(models.Model):
     def make_transaction(cls, transaction_amount, account,
                          category, tags, **args):
         if account.balance < transaction_amount:
-            raise(ValueError('Not enough money'))
+            raise(ValueError('Недостаточно средств'))
 
         with transaction.atomic():
             account.balance -= transaction_amount
