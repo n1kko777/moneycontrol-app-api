@@ -359,6 +359,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        account = models.Account.objects.get(id=instance.account.id)
+        account.balance += instance.transaction_amount
+        account.save()
+        return super(TransactionViewSet, self)\
+            .destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         if models.Profile.objects\
                 .all().filter(user=self.request.user).exists():
