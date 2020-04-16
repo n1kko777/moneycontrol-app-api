@@ -44,7 +44,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
             content = {'error': 'Only admin can update!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        self.perform_create(serializer)
+        self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
@@ -151,7 +151,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     + "Keep the field empty, if you don't know."}
                 return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        self.perform_create(serializer)
+        self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
@@ -179,7 +179,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     + "Keep the field empty, if you don't know."}
                 return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        self.perform_create(serializer)
+        self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
