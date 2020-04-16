@@ -244,6 +244,18 @@ class AccountViewSet(viewsets.ModelViewSet):
 
             return models.Account.objects.filter(profile=profile)
 
+    def destroy(self, request, pk=None):
+        instance = self.get_object()
+
+        if instance.balance > 0:
+            content = {'error': 'Баланс должен быть равен 0!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
 
 class ActionViewSet(mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
