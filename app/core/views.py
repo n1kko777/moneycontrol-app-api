@@ -1,4 +1,5 @@
 from . import serializers
+
 from . import models
 
 from .services import make_transfer
@@ -135,6 +136,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        print(instance.image)
 
         if 'company_identificator' in self.request.data\
                 and self.request.data['company_identificator'] != "":
