@@ -3,7 +3,7 @@ from . import models
 
 from .services import make_transfer
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -245,7 +245,11 @@ class AccountViewSet(viewsets.ModelViewSet):
             return models.Account.objects.filter(profile=profile)
 
 
-class ActionViewSet(viewsets.ModelViewSet):
+class ActionViewSet(mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.DestroyModelMixin,
+                    mixins.ListModelMixin,
+                    viewsets.GenericViewSet):
     """ViewSet for the Action class"""
 
     queryset = models.Action.objects.all()
@@ -306,7 +310,11 @@ class ActionViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(account__in=accounts)
 
 
-class TransferViewSet(viewsets.ModelViewSet):
+class TransferViewSet(mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.DestroyModelMixin,
+                      mixins.ListModelMixin,
+                      viewsets.GenericViewSet):
     """ViewSet for the Transfer class"""
 
     queryset = models.Transfer.objects.all()
@@ -367,7 +375,11 @@ class TransferViewSet(viewsets.ModelViewSet):
                 or self.queryset.filter(to_account__in=accounts)
 
 
-class TransactionViewSet(viewsets.ModelViewSet):
+class TransactionViewSet(mixins.CreateModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.DestroyModelMixin,
+                         mixins.ListModelMixin,
+                         viewsets.GenericViewSet):
     """ViewSet for the Transaction class"""
 
     queryset = models.Transaction.objects.all()
