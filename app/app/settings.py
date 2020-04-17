@@ -1,5 +1,4 @@
 import os
-import dotenv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -130,8 +129,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
-MEDIA_ROOT = '/vol/web/media'
-STATIC_ROOT = '/vol/web/static'
+STATIC_ROOT = os.path.join(BASE_DIR, "vol/web/static")
+MEDIA_R00T = os.path.join(BASE_DIR, "vol/web/media")
+
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
