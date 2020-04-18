@@ -128,5 +128,5 @@ dmypy.json
 .history
 .vscode
 .DS_Store
-app/vol
+app/static
 app/media
