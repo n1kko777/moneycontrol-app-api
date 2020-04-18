@@ -9,7 +9,7 @@ def customer_image_file_path(instande, filename):
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4()}.{ext}'
 
-    return os.path.join('upload/customer/', filename)
+    return os.path.join('vol/web/media/upload/customer/', filename)
 
 
 class Company(models.Model):
