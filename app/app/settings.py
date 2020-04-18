@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # https://github.com/pennersr/django-allauth/issues/1817
     'rest_auth.registration',
     'allauth.socialaccount',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 MIDDLEWARE = [
