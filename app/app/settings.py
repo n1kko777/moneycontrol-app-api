@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'rest_auth.registration',
     'allauth.socialaccount',
     'django_cleanup.apps.CleanupConfig',
+
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
