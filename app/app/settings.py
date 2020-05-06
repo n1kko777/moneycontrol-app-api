@@ -158,7 +158,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 
 # if you want users to confirm email
-# ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 AUTHENTICATION_BACKENDS = (
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -174,8 +174,7 @@ SWAGGER_SETTINGS = {
     'LOGOUT_URL': 'rest_framework:logout',
 }
 
-SITE_ID = 1
-SITE_NAME = "mncntrl.ru"
+SITE_ID = 2
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
