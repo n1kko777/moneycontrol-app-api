@@ -41,6 +41,8 @@ urlpatterns = [
         name='password_reset_confirm'),
 
     url(r'^api/v1/', include('core.urls', namespace='api')),
+    url(r'^', include('django.contrib.auth.urls')),
+
     url(r'^rest-auth/', include('rest_auth.urls')),
     url(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
     url(r'^account/', include('allauth.urls')),
