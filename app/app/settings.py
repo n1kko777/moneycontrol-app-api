@@ -27,24 +27,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
+    'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'allauth',
+    'allauth.account',
+    'dj_rest_auth.registration',
+    'rest_framework_swagger',
+
     # Local
     'users.apps.UsersConfig',
     'core',
 
-    # 3rd party
-    'rest_framework',
-    'rest_framework.authtoken',
-    'rest_auth',
-
-    'allauth',
-    'allauth.account',
-
-    'rest_auth.registration',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.facebook',
-    'django_cleanup.apps.CleanupConfig',
-
-    'rest_framework_swagger',
     'django_extensions',
 ]
 
