@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     # Local
     'users.apps.UsersConfig',
@@ -33,16 +34,17 @@ INSTALLED_APPS = [
     # 3rd party
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_framework_swagger',
     'rest_auth',
-    'django.contrib.sites',  # from offial docs, needed for registration
+
     'allauth',
-    'allauth.account',  # fixes bug with django_sites when running tests
-    # https://github.com/pennersr/django-allauth/issues/1817
+    'allauth.account',
+
     'rest_auth.registration',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.facebook',
     'django_cleanup.apps.CleanupConfig',
 
+    'rest_framework_swagger',
     'django_extensions',
 ]
 
@@ -61,7 +63,7 @@ ROOT_URLCONF = 'app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'), ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -170,8 +172,8 @@ AUTHENTICATION_BACKENDS = (
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
-    'LOGIN_URL': 'rest_framework:login',
-    'LOGOUT_URL': 'rest_framework:logout',
+    'LOGIN_URL': 'login',
+    'LOGOUT_URL': 'logout',
 }
 
 SITE_ID = 2
