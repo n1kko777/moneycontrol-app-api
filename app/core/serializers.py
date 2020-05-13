@@ -30,6 +30,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'is_admin',
             'accounts',
             'company',
+            'company_identificator',
+            'phone_confirmed',
+            'is_active',
         ]
 
     def create(self, validated_data):
@@ -101,7 +104,7 @@ class AccountSerializer(serializers.ModelSerializer):
             'created',
         ]
 
-        read_only_fields = ('id', 'profile')
+        read_only_fields = ('id', 'profile', 'balance', )
 
 
 class CompanySerializer(serializers.ModelSerializer):

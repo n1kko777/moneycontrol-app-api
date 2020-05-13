@@ -1,13 +1,17 @@
-from . import serializers
-
-from . import models
-
+from . import serializers, models
 from .services import make_transfer
 
 from rest_framework import viewsets, status, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .mixins import ServiceExceptionHandlerMixin
+from rest_framework.generics import get_object_or_404
+
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -534,3 +538,111 @@ class TagViewSet(viewsets.ModelViewSet):
                 .all().filter(user=self.request.user)
             profile = profiles[0]
             return models.Tag.objects.filter(company=profile.company)
+
+
+# Custom View to join profile to Company
+# – profile_id
+# - profile_phone
+
+User = get_user_model()
+
+
+class JoinProfileToCompany(
+    ServiceExceptionHandlerMixin,
+    APIView
+):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request):
+        profile = get_object_or_404(
+            models.Profile.objects.all(), user=self.request.user)
+
+        if not profile:
+            return Response(
+                {
+                    'detail':
+                    'У Вас не создан профиль сотрудника'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if profile.is_admin:
+
+            if not models.Profile.objects.filter(
+                    pk=request.data['profile_id']).exists():
+                return Response(
+                    {
+                        'detail':
+                        'Пользователь с указанным ID не найден'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            new_team_member = models.Profile.objects.get(
+                pk=request.data['profile_id'])
+
+            if new_team_member.company is not None:
+                return Response(
+                    {
+                        'detail':
+                        'Пользователь уже состоит в другой или Вашей компании'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if str(new_team_member.phone) != \
+                    str(request.data['profile_phone']):
+                return Response(
+                    {
+                        'detail':
+                        'Неверно указан номер телефона'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            new_team_member.company_identificator = \
+                profile.company_identificator
+            new_team_member.company = \
+                profile.company
+
+            try:
+                send_mail(
+                    'Приглашение в компанию ' +
+                    f'{new_team_member.company.company_name}',
+                    'Вы были успешно добавлены в компанию ' +
+                    f'{new_team_member.company.company_name}. ' +
+                    'Зайдите в приложение!',
+                    'Команда Mncntrl.ru <service@mncntrl.ru>',
+                    [f'{new_team_member.user.email}'],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(e)
+                return Response(
+                    {
+                        'detail':
+                        'Произошла ошибка на сервере. Повторите попытку позже.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            new_team_member.save()
+
+            return Response(
+                {
+                    'detail':
+                    f'{new_team_member.first_name} ' +
+                    f'{new_team_member.last_name} ' +
+                        'добавлен в Вашу компанию'
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {
+                    'detail':
+                    'Только администратор может добавить сотрудника'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

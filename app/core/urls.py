@@ -18,4 +18,5 @@ router.register("transaction", views.TransactionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('join-profile-to-company/', views.JoinProfileToCompany.as_view())
 ]
