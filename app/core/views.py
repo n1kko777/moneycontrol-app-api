@@ -344,7 +344,27 @@ class TransferViewSet(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
 
         try:
+            transfer_from_account = models.Account.objects.get(
+                pk=self.request.data['from_account']
+            )
+
             make_transfer(**serializer.validated_data)
+
+            send_mail(
+                'Подтвердите перевод в ' +
+                transfer_from_account.profile.company.company_name,
+                transfer_from_account.profile.first_name +
+                " " +
+                transfer_from_account.profile.last_name +
+                " перевел Вам " +
+                self.request.data['transfer_amount'] +
+                " ₽. Если Вы не получили данную" +
+                " сумму денежных средств, перейдите в приложение и удалите операцию.",
+                'Команда Mncntrl.ru <service@mncntrl.ru>',
+                [models.Account.objects.get(
+                    pk=self.request.data["to_account"]).profile.user.email, ],
+                fail_silently=False,
+            )
         except Exception as e:
             print(e)
             content = {

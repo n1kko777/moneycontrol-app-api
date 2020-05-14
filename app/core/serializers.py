@@ -104,7 +104,9 @@ class AccountSerializer(serializers.ModelSerializer):
             'created',
         ]
 
-        read_only_fields = ('id', 'profile', 'balance', )
+        read_only_fields = [
+            'id', 'profile', 'balance', 'is_active',
+        ]
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -162,7 +164,9 @@ class ActionSerializer(serializers.ModelSerializer):
             'created',
             'last_updated',
         )
-        read_only_fields = ('id',)
+        read_only_fields = [
+            'id', 'is_active',
+        ]
 
     def create(self, validated_data):
         if validated_data['account'].balance\
@@ -218,9 +222,10 @@ class TransferSerializer(serializers.ModelSerializer):
             'last_updated',
             'created',
         ]
-        read_only_fields = (
+        read_only_fields = [
             'id', 'from_profile',
-            'to_profile', )
+            'to_profile', 'is_active',
+        ]
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -241,7 +246,9 @@ class TransactionSerializer(serializers.ModelSerializer):
             'last_updated',
             'created',
         )
-        read_only_fields = ('id', )
+        read_only_fields = [
+            'id', 'is_active',
+        ]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -257,7 +264,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'last_updated',
         ]
 
-        read_only_fields = ['id', 'company']
+        read_only_fields = ['id', 'company', 'is_active']
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -273,4 +280,4 @@ class TagSerializer(serializers.ModelSerializer):
             'last_updated',
         ]
 
-        read_only_fields = ['id', 'company']
+        read_only_fields = ['id', 'company', 'is_active', ]
