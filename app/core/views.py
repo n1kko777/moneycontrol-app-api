@@ -359,7 +359,8 @@ class TransferViewSet(mixins.CreateModelMixin,
                 " перевел Вам " +
                 self.request.data['transfer_amount'] +
                 " ₽. Если Вы не получили данную" +
-                " сумму денежных средств, перейдите в приложение и удалите операцию.",
+                " сумму денежных средств, перейдите в " +
+                "приложение и удалите операцию.",
                 'Команда Mncntrl.ru <service@mncntrl.ru>',
                 [models.Account.objects.get(
                     pk=self.request.data["to_account"]).profile.user.email, ],
