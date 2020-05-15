@@ -30,7 +30,7 @@ class Profile(models.Model):
 
     #  Relationships
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
@@ -64,6 +64,10 @@ class Account(models.Model):
     profile = models.ForeignKey(
         'Profile',
         related_name="accounts",
+        on_delete=models.DO_NOTHING,
+    )
+    company = models.ForeignKey(
+        'Company',
         on_delete=models.CASCADE,
     )
 
@@ -88,9 +92,13 @@ class Action(models.Model):
     #  Relationships
     account = models.ForeignKey(
         'Account',
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
     )
     tags = models.ManyToManyField("Tag", blank=True)
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+    )
 
     #  Fields
     action_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -107,9 +115,13 @@ class Transfer(models.Model):
 
     #  Relationships
     from_account = models.ForeignKey(
-        "Account", on_delete=models.CASCADE, related_name='from_account')
+        "Account", on_delete=models.DO_NOTHING, related_name='from_account')
     to_account = models.ForeignKey(
-        "Account", on_delete=models.CASCADE, related_name='to_account')
+        "Account", on_delete=models.DO_NOTHING, related_name='to_account')
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+    )
 
     #  Fields
     transfer_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -127,8 +139,12 @@ class Transaction(models.Model):
     #  Relationships
     tags = models.ManyToManyField("Tag", blank=True)
     account = models.ForeignKey(
-        "Account", on_delete=models.CASCADE,)
-    category = models.ForeignKey("Category", on_delete=models.CASCADE)
+        "Account", on_delete=models.DO_NOTHING,)
+    category = models.ForeignKey("Category", on_delete=models.DO_NOTHING)
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+    )
 
     #  Fields
     transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -152,6 +168,7 @@ class Transaction(models.Model):
             tran = cls.objects.create(
                 transaction_amount=transaction_amount,
                 account=account,
+                company=account.profile.company,
                 category=category,
             )
 

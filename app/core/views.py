@@ -31,6 +31,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        if models.Profile.objects.get(
+            user=self.request.user
+        ).company is not None:
+            content = {'error': 'Вы уже состоите в компании!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -223,18 +229,20 @@ class AccountViewSet(viewsets.ModelViewSet):
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        self.perform_create(serializer)
+        if models.Profile.objects.get(
+                user=self.request.user).company is None:
+            content = {'error': 'Вы не являетесь сотрудником компании'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(profile=models.Profile.objects.get(
+            user=self.request.user), company=models.Profile.objects.get(
+            user=self.request.user).company)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
-    def perform_create(self, serializer):
-        """Create a new account"""
-        profile = models.Profile.objects.get(user=self.request.user)
-        serializer.save(profile=profile)
 
     def get_queryset(self):
         if models.Profile.objects\
@@ -290,7 +298,14 @@ class ActionViewSet(mixins.CreateModelMixin,
             content = {'error': 'No such account'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer.save(account=account)
+        if models.Profile.objects.get(
+                user=self.request.user).company is None:
+            content = {'error': 'Вы не являетесь сотрудником компании'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(account=account,
+                        company=models.Profile.objects.get(
+                            user=self.request.user).company)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
@@ -343,29 +358,21 @@ class TransferViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        if models.Profile.objects.get(
+                user=self.request.user).company is None:
+            content = {'error': 'Вы не являетесь сотрудником компании'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        transfer_from_account = models.Account.objects.get(
+            pk=self.request.data['from_account']
+        )
+
+        transfer_to_account = models.Account.objects.get(
+            pk=self.request.data['from_account']
+        )
+
         try:
-            transfer_from_account = models.Account.objects.get(
-                pk=self.request.data['from_account']
-            )
-
             make_transfer(**serializer.validated_data)
-
-            send_mail(
-                'Подтвердите перевод в ' +
-                transfer_from_account.profile.company.company_name,
-                transfer_from_account.profile.first_name +
-                " " +
-                transfer_from_account.profile.last_name +
-                " перевел Вам " +
-                self.request.data['transfer_amount'] +
-                " ₽. Если Вы не получили данную" +
-                " сумму денежных средств, перейдите в " +
-                "приложение и удалите операцию.",
-                'Команда Mncntrl.ru <service@mncntrl.ru>',
-                [models.Account.objects.get(
-                    pk=self.request.data["to_account"]).profile.user.email, ],
-                fail_silently=False,
-            )
         except Exception as e:
             print(e)
             content = {
@@ -373,6 +380,35 @@ class TransferViewSet(mixins.CreateModelMixin,
                 'или неверно указан счет получателя.'
             }
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if transfer_from_account.profile != transfer_to_account.profile:
+                send_mail(
+                    'Подтвердите перевод в ' +
+                    transfer_from_account.profile.company.company_name,
+                    transfer_from_account.profile.first_name +
+                    " " +
+                    transfer_from_account.profile.last_name +
+                    " перевел Вам " +
+                    self.request.data['transfer_amount'] +
+                    " ₽. Если Вы не получили данную" +
+                    " сумму денежных средств, перейдите в " +
+                    "приложение и удалите операцию.",
+                    'Команда Mncntrl.ru <service@mncntrl.ru>',
+                    [models.Account.objects.get(
+                        pk=self.request.data["to_account"]
+                    ).profile.user.email, ],
+                    fail_silently=False,
+                )
+        except Exception as e:
+            print(e)
+            return Response(
+                {
+                    'detail':
+                    'Произошла ошибка на сервере. Повторите попытку позже.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
@@ -429,6 +465,11 @@ class TransactionViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
+
+        if models.Profile.objects.get(
+                user=self.request.user).company is None:
+            content = {'error': 'Вы не являетесь сотрудником компании'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             models.Transaction.make_transaction(**serializer.validated_data)

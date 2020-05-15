@@ -26,6 +26,7 @@ def make_transfer(from_account, to_account, transfer_amount, **args):
 
         transfer = Transfer.objects.create(
             from_account=from_account,
+            company=from_account.profile.company,
             to_account=to_account,
             transfer_amount=transfer_amount
         )
