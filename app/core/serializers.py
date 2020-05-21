@@ -105,7 +105,7 @@ class AccountSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = [
-            'id', 'profile', 'balance', 'is_active',
+            'id', 'profile', 'is_active',
         ]
 
 
