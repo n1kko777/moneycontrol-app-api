@@ -170,8 +170,8 @@ SWAGGER_SETTINGS = {
     'LOGOUT_URL': 'logout',
 }
 
-SITE_ID = 2
-ADMIN_ENABLED = False
+SITE_ID = 3
+# ADMIN_ENABLED = False
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'

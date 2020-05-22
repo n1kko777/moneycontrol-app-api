@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -9,6 +10,7 @@ from rest_framework_swagger.views import get_swagger_view
 from .views import NewEmailConfirmation
 
 urlpatterns = [
+    url(r'^admin/', admin.site.urls),
     url(r'^$', TemplateView.as_view(template_name="home.html"), name='home'),
     url(r'^privacy/$', TemplateView.as_view(template_name="privacy.html"),
         name='privacy'),
