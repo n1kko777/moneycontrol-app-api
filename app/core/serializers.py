@@ -35,59 +35,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             'is_active',
         ]
 
-    def create(self, validated_data):
-        instance = models.Profile.objects.create(**validated_data)
-        if instance.company_identificator is not None and\
-                str(instance.company_identificator) != "":
-            company = models.Company.objects.get(
-                company_id=instance.company_identificator)
-            instance.company = company
-        else:
-            instance.company_identificator = None
-
-        instance.save()
-        return instance
-
-    def update(self, instance, validated_data):
-        instance.company_identificator = validated_data.get(
-            'company_identificator', instance.company_identificator)
-        instance.company = validated_data.get('company', instance.company)
-        instance.is_admin = validated_data.get('is_admin', instance.is_admin)
-        instance.is_active = validated_data.get(
-            'is_active', instance.is_active)
-
-        if instance.company_identificator is None or\
-                str(instance.company_identificator) == "":
-            instance.company_identificator = None
-
-            company = instance.company
-
-            instance.company = None
-            if instance.is_admin:
-                instance.is_admin = False
-                company.delete()
-        else:
-            company = models.Company.objects.get(
-                company_id=instance.company_identificator)
-            instance.company = company
-
-        instance.id = validated_data.get('id', instance.id)
-        instance.first_name = validated_data.get(
-            'first_name', instance.first_name)
-        instance.last_name = validated_data.get(
-            'last_name', instance.last_name)
-        instance.phone = validated_data.get('phone', instance.phone)
-        instance.phone_confirmed = validated_data.get(
-            'phone_confirmed', instance.phone_confirmed)
-        instance.image = validated_data.get('image', instance.image)
-        instance.created = validated_data.get('created', instance.created)
-        instance.last_updated = validated_data.get(
-            'last_updated', instance.last_updated)
-
-        instance.save()
-
-        return instance
-
 
 class AccountSerializer(serializers.ModelSerializer):
 

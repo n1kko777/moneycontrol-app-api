@@ -52,7 +52,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user)[0].is_admin:
-            content = {'error': 'Only admin can update!'}
+            content = {'error': 'Только администратор может удалить компанию!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_update(serializer)
@@ -68,7 +68,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user)[0].is_admin:
-            content = {'error': 'Only admin can delete!'}
+            content = {'error': 'Только администратор может удалить компанию!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         instance.delete()
@@ -119,21 +119,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
             content = {'error': 'You can have only one profile!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] != "":
-            identificator = self.request.data['company_identificator']
-            try:
-                company = models.Company.objects.get(company_id=identificator)
-                if not company:
-                    raise Exception()
-
-            except Exception as e:
-                print(e)
-                content = {
-                    "error": "Identificator is incorrect. "
-                    + "Keep the field empty, if you don't know."}
-                return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -146,49 +131,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] != "":
-            identificator = self.request.data['company_identificator']
-            try:
-                company = models.Company.objects.get(company_id=identificator)
-                if not company:
-                    raise Exception()
-
-            except Exception as e:
-                print(e)
-                content = {
-                    "error": "Identificator is incorrect. "
-                    + "Keep the field empty, if you don't know."}
-                return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        self.perform_update(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-            headers=headers
-        )
-
-    def partial_update(self, request, pk=None):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        if 'company_identificator' in self.request.data\
-                and self.request.data['company_identificator'] != "":
-            identificator = self.request.data['company_identificator']
-            try:
-                company = models.Company.objects.get(company_id=identificator)
-                if not company:
-                    raise Exception()
-
-            except Exception as e:
-                print(e)
-                content = {
-                    "error": "Identificator is incorrect. "
-                    + "Keep the field empty, if you don't know."}
-                return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -206,7 +148,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 .get(company_id=instance.company_identificator)\
                 .delete()
 
-        instance.delete()
+        try:
+            instance.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {
+                    'detail':
+                    'Невозможно удалить профиль, \
+                        который используется в операциях.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         return Response(
             status=status.HTTP_204_NO_CONTENT,
         )
@@ -264,10 +221,21 @@ class AccountViewSet(viewsets.ModelViewSet):
             content = {'error': 'Баланс должен быть равен 0!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-        instance.delete()
-        return Response(
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        try:
+            instance.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {
+                    'detail':
+                    'Невозможно удалить счет, \
+                        который используется в операциях.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ActionViewSet(mixins.CreateModelMixin,
@@ -553,6 +521,25 @@ class CategoryViewSet(viewsets.ModelViewSet):
             profile = profiles[0]
             return models.Category.objects.filter(company=profile.company)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        try:
+            instance.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {
+                    'detail':
+                    'Невозможно удалить категорию, \
+                        которая используется в операциях.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class TagViewSet(viewsets.ModelViewSet):
     """ViewSet for the Tag class"""
@@ -601,11 +588,29 @@ class TagViewSet(viewsets.ModelViewSet):
             profile = profiles[0]
             return models.Tag.objects.filter(company=profile.company)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        try:
+            instance.delete()
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {
+                    'detail':
+                    'Невозможно удалить тег, \
+                        который используется в операциях.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 # Custom View to join profile to Company
 # – profile_id
 # - profile_phone
-
 User = get_user_model()
 
 
@@ -663,10 +668,9 @@ class JoinProfileToCompany(
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            new_team_member.company_identificator = \
-                profile.company_identificator
-            new_team_member.company = \
-                profile.company
+            new_team_member\
+                .company_identificator = profile.company_identificator
+            new_team_member.company = profile.company
 
             try:
                 send_mail(
