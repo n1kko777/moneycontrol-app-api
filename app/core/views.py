@@ -368,7 +368,7 @@ class TransferViewSet(mixins.CreateModelMixin,
         )
 
         transfer_to_account = models.Account.objects.get(
-            pk=self.request.data['from_account']
+            pk=self.request.data['to_account']
         )
 
         try:
