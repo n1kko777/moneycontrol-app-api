@@ -24,12 +24,25 @@ class CompanyViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+            return self.queryset\
+                .filter(company_id=profile.company_identificator)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         if not models.Profile.objects.all()\
-                .filter(user=self.request.user).exists():
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -78,17 +91,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT,
         )
 
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            return self.queryset\
-                .filter(company_id=profile.company_identificator)
-
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """ViewSet for the Profile class"""
@@ -98,26 +100,27 @@ class ProfileViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
-    def perform_create(self, serializer):
-        """Create a new pfofile"""
-        serializer.save(user=self.request.user)
-
     def get_queryset(self):
         """Return object for current authenticated user only"""
         profiles = self.queryset.filter(user=self.request.user)
 
-        if profiles.exists() and profiles[0].is_admin is True:
+        if profiles.exists() and profiles[0].is_admin:
             profiles = models.Profile.objects.filter(
                 company=profiles[0].company)
 
         return profiles
+
+    def perform_create(self, serializer):
+        """Create a new pfofile"""
+        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         if models.Profile.objects.all()\
-                .filter(user=self.request.user).exists():
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
             content = {'error': 'You can have only one profile!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -179,12 +182,26 @@ class AccountViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+
+            if profile.is_admin:
+                return models.Account.objects.filter(company=profile.company)
+
+            return models.Account.objects\
+                .filter(profile=profile, company=profile.company)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         if not models.Profile.objects.all()\
-                .filter(user=self.request.user).exists():
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -202,19 +219,6 @@ class AccountViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            profiles = models.Profile.objects\
-                .all().filter(company=profile.company)
-
-            if profile.is_admin:
-                return models.Account.objects.filter(profile__in=profiles)
-
-            return models.Account.objects.filter(profile=profile)
 
     def destroy(self, request, pk=None):
         instance = self.get_object()
@@ -252,11 +256,25 @@ class ActionViewSet(mixins.CreateModelMixin,
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(company=profile.company)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile, company=profile.company)
+
+            return self.queryset.filter(account__in=accounts)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # check if requested account belongs to user
 
         try:
             profile = models.Profile.objects\
@@ -294,23 +312,6 @@ class ActionViewSet(mixins.CreateModelMixin,
         return super(ActionViewSet, self)\
             .destroy(request, *args, **kwargs)
 
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            profiles = models.Profile.objects\
-                .all().filter(company=profile.company)
-
-            if profile.is_admin:
-                accounts = models.Account.objects\
-                    .filter(profile__in=profiles)
-            else:
-                accounts = models.Account.objects\
-                    .filter(profile=profile)
-
-            return self.queryset.filter(account__in=accounts)
-
 
 class TransferViewSet(mixins.CreateModelMixin,
                       mixins.RetrieveModelMixin,
@@ -323,6 +324,24 @@ class TransferViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.TransferSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    def get_queryset(self):
+
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(company=profile.company)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile, company=profile.company)
+
+            return self.queryset.filter(from_account__in=accounts) \
+                or self.queryset.filter(to_account__in=accounts)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -401,23 +420,6 @@ class TransferViewSet(mixins.CreateModelMixin,
         return super(TransferViewSet, self)\
             .destroy(request, *args, **kwargs)
 
-    def get_queryset(self):
-        if models.Profile.objects.exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            profiles = models.Profile.objects\
-                .all().filter(company=profile.company)
-
-            if profile.is_admin:
-                accounts = models.Account.objects\
-                    .filter(profile__in=profiles)
-            else:
-                accounts = models.Account.objects\
-                    .filter(profile=profile)
-
-            return self.queryset.filter(from_account__in=accounts) \
-                or self.queryset.filter(to_account__in=accounts)
-
 
 class TransactionViewSet(mixins.CreateModelMixin,
                          mixins.RetrieveModelMixin,
@@ -430,6 +432,22 @@ class TransactionViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.TransactionSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+
+            if profile.is_admin:
+                accounts = models.Account.objects\
+                    .filter(company=profile.company)
+            else:
+                accounts = models.Account.objects\
+                    .filter(profile=profile, company=profile.company)
+
+            return self.queryset.filter(account__in=accounts)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -459,23 +477,6 @@ class TransactionViewSet(mixins.CreateModelMixin,
         return super(TransactionViewSet, self)\
             .destroy(request, *args, **kwargs)
 
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            profiles = models.Profile.objects\
-                .all().filter(company=profile.company)
-
-            if profile.is_admin:
-                accounts = models.Account.objects\
-                    .filter(profile__in=profiles)
-            else:
-                accounts = models.Account.objects\
-                    .filter(profile=profile)
-
-            return self.queryset.filter(account__in=accounts)
-
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """ViewSet for the Category class"""
@@ -484,6 +485,20 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CategorySerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+
+            return models.Category.objects.filter(company=profile.company)
+
+    def perform_create(self, serializer):
+        """Create a new category"""
+        profile = models.Profile.objects.get(user=self.request.user)
+        serializer.save(company=profile.company)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -494,7 +509,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
                 .filter(user=self.request.user)[0]
 
         if not models.Profile.objects.all()\
-                .filter(user=self.request.user).exists():
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -509,19 +525,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
-    def perform_create(self, serializer):
-        """Create a new category"""
-        profile = models.Profile.objects.get(user=self.request.user)
-        serializer.save(company=profile.company)
-
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profiles = models.Profile.objects\
-                .all().filter(user=self.request.user)
-            profile = profiles[0]
-            return models.Category.objects.filter(company=profile.company)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -551,17 +554,33 @@ class TagViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
+    def get_queryset(self):
+        if models.Profile.objects\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            profile = models.Profile.objects\
+                .filter(user=self.request.user)[0]
+
+            return models.Tag.objects.filter(company=profile.company)
+
+    def perform_create(self, serializer):
+        """Create a new tag"""
+        profile = models.Profile.objects.get(user=self.request.user)
+        serializer.save(company=profile.company)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
+                .all().filter(user=self.request.user,
+                              company__isnull=False).exists():
             profile = models.Profile.objects.all()\
                 .filter(user=self.request.user)[0]
 
         if not models.Profile.objects.all()\
-                .filter(user=self.request.user).exists():
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -576,19 +595,6 @@ class TagViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
-
-    def perform_create(self, serializer):
-        """Create a new tag"""
-        profile = models.Profile.objects.get(user=self.request.user)
-        serializer.save(company=profile.company)
-
-    def get_queryset(self):
-        if models.Profile.objects\
-                .all().filter(user=self.request.user).exists():
-            profiles = models.Profile.objects\
-                .all().filter(user=self.request.user)
-            profile = profiles[0]
-            return models.Tag.objects.filter(company=profile.company)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
