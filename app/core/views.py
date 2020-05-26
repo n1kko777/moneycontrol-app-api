@@ -13,6 +13,8 @@ from rest_framework.generics import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 
+User = get_user_model()
+
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """ViewSet for the Company class"""
@@ -158,8 +160,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     'detail':
-                    'Невозможно удалить профиль, \
-                        который используется в операциях.'
+                    'Невозможно удалить профиль, ' +
+                        'который используется в операциях.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -231,8 +233,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     'detail':
-                    'Невозможно удалить счет, \
-                        который используется в операциях.'
+                    'Невозможно удалить счет, ' +
+                        'который используется в операциях.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -534,8 +536,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     'detail':
-                    'Невозможно удалить категорию, \
-                        которая используется в операциях.'
+                    'Невозможно удалить категорию, ' +
+                        'которая используется в операциях.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -601,8 +603,8 @@ class TagViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     'detail':
-                    'Невозможно удалить тег, \
-                        который используется в операциях.'
+                    'Невозможно удалить тег, ' +
+                    'который используется в операциях.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -611,7 +613,6 @@ class TagViewSet(viewsets.ModelViewSet):
 # Custom View to join profile to Company
 # – profile_id
 # - profile_phone
-User = get_user_model()
 
 
 class JoinProfileToCompany(
@@ -709,6 +710,120 @@ class JoinProfileToCompany(
                 {
                     'detail':
                     'Только администратор может добавить сотрудника'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# Custom View to remove profile from Company
+# – profile_id
+# - profile_phone
+
+
+class RemoveProfileFromCompany(
+    ServiceExceptionHandlerMixin,
+    APIView
+):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request):
+        profile = get_object_or_404(
+            models.Profile.objects.all(), user=self.request.user)
+
+        if not profile:
+            return Response(
+                {
+                    'detail':
+                    'У Вас не создан профиль сотрудника'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if profile.pk == request.data['profile_id']:
+            return Response(
+                {
+                    'detail':
+                    'Вы не можете удалить себя.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if profile.is_admin:
+
+            if not models.Profile.objects.filter(
+                    pk=request.data['profile_id']).exists():
+                return Response(
+                    {
+                        'detail':
+                        'Пользователь с указанным ID не найден'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            old_team_member = models.Profile.objects.get(
+                pk=request.data['profile_id'])
+
+            if old_team_member.company is None:
+                return Response(
+                    {
+                        'detail':
+                        'Пользователь не состоит ни в какой из компаний.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if str(old_team_member.phone) != \
+                    str(request.data['profile_phone']):
+                return Response(
+                    {
+                        'detail':
+                        'Неверно указан номер телефона'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            old_team_member\
+                .company_identificator = None
+            old_team_member.company = None
+
+            try:
+                send_mail(
+                    'Удаление из компании ' +
+                    f'{profile.company.company_name}',
+                    'Вы были успешно удалены из компании ' +
+                    f'{profile.company.company_name}. ' +
+                    'Зайдите в приложение!',
+                    'Команда Mncntrl.ru <service@mncntrl.ru>',
+                    [f'{old_team_member.user.email}'],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(e)
+                return Response(
+                    {
+                        'detail':
+                        'Произошла ошибка на сервере. Повторите попытку позже.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            old_team_member.save()
+
+            return Response(
+                {
+                    'detail':
+                    f'{old_team_member.first_name} ' +
+                    f'{old_team_member.last_name} ' +
+                        'удален из Вашей компании.'
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {
+                    'detail':
+                    'Только администратор может удалить сотрудника'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
