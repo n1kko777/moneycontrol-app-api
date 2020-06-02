@@ -8,9 +8,12 @@ from django.views.generic import TemplateView, RedirectView
 from rest_framework_swagger.views import get_swagger_view
 
 from .views import NewEmailConfirmation
+from django.views.generic import RedirectView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^favicon\.ico$', RedirectView.as_view(
+        url='/static/images/favicon.ico'), name='favicon'),
     url(r'^$', TemplateView.as_view(template_name="home.html"), name='home'),
     url(r'^privacy/$', TemplateView.as_view(template_name="privacy.html"),
         name='privacy'),

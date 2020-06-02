@@ -128,5 +128,6 @@ dmypy.json
 .history
 .vscode
 .DS_Store
-app/static
+app/static/*
 app/media
+!app/static/images/
