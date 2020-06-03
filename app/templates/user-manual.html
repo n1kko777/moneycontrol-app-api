@@ -8,6 +8,23 @@
         text-align: center;
         margin: 0 auto;
     }
+
+    .center img {
+        display: inline-block;
+        width: 100%;
+    }
+
+    .center--one img {
+        max-width: 300px;
+    }
+
+    .center--two img {
+        max-width: 600px;
+    }
+
+    .center--three img {
+        max-width: 900px;
+    }
 </style>
 
 <div class="container">
@@ -81,7 +98,7 @@
         Новым пользователям необходимо пройти регистрацию, для этого пройдите по
         ссылке “Зарегистрироваться” Экран регистрации представлен на рисунке 1.
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image001.png' %}" />
         </p>
@@ -93,7 +110,7 @@
         При регистрации необходимо указывать актуальный адрес электронной почты,
         так как туда придет письмо с подтверждением.
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image002.png' %}" />
         </p>
@@ -105,7 +122,7 @@
         На почту придет письмо с подтверждением, может попасть в СПАМ, переходим по
         указанной ссылке и нажимаем «Подтвердить».
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image003.png' %}" />
         </p>
@@ -118,7 +135,7 @@
         вход. Новым пользователем необходимо создать профиль сотрудника. С этими
         данными Вас будут видеть другие сотрудники Вашей организации.
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image004.png' %}" />
         </p>
@@ -137,9 +154,9 @@
         телефона. После того, как Вы будете добавлено в компанию, необходимо будет
         повторно зайти в приложение.
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
-            <img src="{% static 'images/manual/image005.jpg' %}" />
+            <img src="{% static 'images/manual/image005.png' %}" />
         </p>
         <p>
             Рисунок 5 – Менеджер компании
@@ -148,7 +165,7 @@
     <h5>
         <strong>ГЛАВНЫЙ ЭКРАН ПРИЛОЖЕНИЯ</strong>
     </h5>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image006.png' %}" />
         </p>
@@ -172,7 +189,7 @@
         Для того, чтобы можно было вносить какие-либо операции, необходимо создать
         счет. Для этого снизу в меню выбираем вкладку «Еще», далее «Счета».
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image007.png' %}" />
         </p>
@@ -189,7 +206,7 @@
         счетов, также ему будут отображать только его операции или операции
         перевода, когда действия происходят между сотрудниками.
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image008.png' %}" />
         </p>
@@ -216,7 +233,7 @@
             удалять существующих.
         </li>
     </ul>
-    <div class="center">
+    <div class="center center--three">
         <p>
             <img src="{% static 'images/manual/image009.png' %}" />
         </p>
@@ -237,7 +254,7 @@
         выберите «Доход». Операцию можно создавать с любого экрана, где доступна
         кнопка.
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image010.png' %}" />
         </p>
@@ -257,7 +274,7 @@
         выберите «Расход». Операцию можно создавать с любого экрана, где доступна
         кнопка.
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image011.png' %}" />
         </p>
@@ -270,7 +287,7 @@
         сделать обновление данных. Для этого в правом верхнем углу нажмите на «Три
         точки», затем «Обновить».
     </p>
-    <div class="center">
+    <div class="center center--one">
         <p>
             <img src="{% static 'images/manual/image012.png' %}" />
         </p>
@@ -290,7 +307,7 @@
         выберите «Перевод». Операцию можно создавать с любого экрана, где доступна
         кнопка.
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image013.png' %}" />
         </p>
@@ -311,7 +328,7 @@
         цветом, значит данные отфильтрованы. Чтобы сбросить фильтр нажинайте на
         этот значок.
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image014.png' %}" />
         </p>
@@ -331,7 +348,7 @@
         можно через вкладку «Еще» в нижнем меню или перейдя из<strong> </strong>
         главного экрана по стрелке.<strong></strong>
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image015.png' %}" />
         </p>
@@ -367,7 +384,7 @@
         Для формирования отчета переходим на вкладку «Еще» кнопка «Сформировать
         отчет».
     </p>
-    <div class="center">
+    <div class="center center--two">
         <p>
             <img src="{% static 'images/manual/image016.png' %}" />
         </p>
