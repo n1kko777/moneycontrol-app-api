@@ -17,6 +17,8 @@ urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name="home.html"), name='home'),
     url(r'^privacy/$', TemplateView.as_view(template_name="privacy.html"),
         name='privacy'),
+    url(r'^user-manual/$', TemplateView.as_view(template_name="user-manual.html"),
+        name='user-manual'),
     url(r'^signup/$', TemplateView.as_view(template_name="signup.html"),
         name='signup'),
     url(r'^email-verification/$',
