@@ -41,8 +41,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         if not models.Profile.objects.all()\
-                .filter(user=self.request.user,
-                        company__isnull=False).exists():
+                .filter(user=self.request.user,).exists():
             content = {'error': 'No Profile was found!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
