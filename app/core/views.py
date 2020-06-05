@@ -222,7 +222,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def destroy(self, request, pk=None):
         instance = self.get_object()
 
-        if instance.balance > 0:
+        if instance.balance != 0:
             content = {'error': 'Баланс должен быть равен 0!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -302,10 +302,6 @@ class ActionViewSet(mixins.CreateModelMixin,
         instance = self.get_object()
         account = models.Account.objects.get(id=instance.account.id)
 
-        if account.balance < instance.action_amount:
-            content = {'error': 'Недостаточно средств'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
         account.balance -= instance.action_amount
         account.save()
         return super(ActionViewSet, self)\
@@ -346,14 +342,23 @@ class TransferViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        try:
+            profile = models.Profile.objects\
+                .all().filter(user=self.request.user)[0]
+            transfer_from_account = models.Account\
+                .objects.filter(profile=profile)\
+                .get(
+                    pk=self.request.data['from_account']
+                )
+        except Exception as e:
+            print(e)
+            content = {'error': 'No such account'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         if models.Profile.objects.get(
                 user=self.request.user).company is None:
             content = {'error': 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        transfer_from_account = models.Account.objects.get(
-            pk=self.request.data['from_account']
-        )
 
         transfer_to_account = models.Account.objects.get(
             pk=self.request.data['to_account']
@@ -364,8 +369,7 @@ class TransferViewSet(mixins.CreateModelMixin,
         except Exception as e:
             print(e)
             content = {
-                'error': 'Недостаточно средств ' +
-                'или неверно указан счет получателя.'
+                'error': 'Неверно указан счет получателя.'
             }
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
@@ -405,10 +409,6 @@ class TransferViewSet(mixins.CreateModelMixin,
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         to_account = models.Account.objects.get(id=instance.to_account.id)
-
-        if to_account.balance < instance.transfer_amount:
-            content = {'error': 'Недостаточно средств'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         to_account.balance -= instance.transfer_amount
         to_account.save()
@@ -452,6 +452,15 @@ class TransactionViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
+
+        profile = models.Profile.objects\
+            .all().filter(user=self.request.user)[0]
+
+        if not models.Account.objects.filter(profile=profile)\
+                .filter(pk=self.request.data['account']).exists():
+
+            content = {'error': 'No such account'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
                 user=self.request.user).company is None:

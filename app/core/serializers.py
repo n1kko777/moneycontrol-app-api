@@ -116,15 +116,10 @@ class ActionSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        if validated_data['account'].balance\
-                + validated_data['action_amount'] > 0:
-            validated_data['account'].balance\
-                += validated_data['action_amount']
-            validated_data['account'].save()
-        else:
-            raise serializers.ValidationError(
-                ('Недостаточно средств')
-            )
+
+        validated_data['account'].balance\
+            += validated_data['action_amount']
+        validated_data['account'].save()
 
         return super(ActionSerializer, self).create(validated_data)
 
