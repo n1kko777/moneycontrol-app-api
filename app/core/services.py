@@ -5,7 +5,7 @@ from django.db import transaction
 def make_transfer(from_account, to_account, transfer_amount, **args):
 
     if from_account == to_account:
-        raise(ValueError('Chose another account'))
+        raise(ValueError('Выберите другой счет'))
 
     from_company = from_account.profile.company
     to_company = to_account.profile.company

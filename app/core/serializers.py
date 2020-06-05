@@ -141,14 +141,14 @@ class TransferSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(e)
             raise serializers.ValidationError(
-                'No such account from serializer')
+                'Счет отправителя не найден')
         try:
             data['to_account'] = models.Account.objects.get(
                 pk=data['to_account'])
         except Exception as e:
             print(e)
             raise serializers.ValidationError(
-                'No such account to serializer')
+                'Счет получателя не найден')
         return data
 
     class Meta:

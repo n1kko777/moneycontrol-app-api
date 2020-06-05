@@ -42,7 +42,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,).exists():
-            content = {'error': 'No Profile was found!'}
+            content = {'error': 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
@@ -120,7 +120,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'You can have only one profile!'}
+            content = {'error': 'У вас может быть только один профиль!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
@@ -201,7 +201,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'No Profile was found!'}
+            content = {'error': 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
@@ -282,7 +282,7 @@ class ActionViewSet(mixins.CreateModelMixin,
                 .get(pk=self.request.data['account'])
         except Exception as e:
             print(e)
-            content = {'error': 'No such account'}
+            content = {'error': 'Указанный счет не найден'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
@@ -352,7 +352,7 @@ class TransferViewSet(mixins.CreateModelMixin,
                 )
         except Exception as e:
             print(e)
-            content = {'error': 'No such account'}
+            content = {'error': 'Указанный счет не найден'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
@@ -459,7 +459,7 @@ class TransactionViewSet(mixins.CreateModelMixin,
         if not models.Account.objects.filter(profile=profile)\
                 .filter(pk=self.request.data['account']).exists():
 
-            content = {'error': 'No such account'}
+            content = {'error': 'Указанный счет не найден'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
@@ -519,11 +519,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'No Profile was found!'}
+            content = {'error': 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if not profile.company:
-            content = {'error': 'No Company was found!'}
+            content = {'error': 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
@@ -589,11 +589,11 @@ class TagViewSet(viewsets.ModelViewSet):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'No Profile was found!'}
+            content = {'error': 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if not profile.company:
-            content = {'error': 'No Company was found!'}
+            content = {'error': 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
