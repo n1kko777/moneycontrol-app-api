@@ -171,7 +171,7 @@ SWAGGER_SETTINGS = {
 }
 
 SITE_ID = 3
-# ADMIN_ENABLED = False
+ADMIN_ENABLED = False
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'
