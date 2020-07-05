@@ -107,6 +107,7 @@ class ActionSerializer(serializers.ModelSerializer):
             'profile_name',
             'action_amount',
             'is_active',
+            'category',
             'tags',
             'created',
             'last_updated',
