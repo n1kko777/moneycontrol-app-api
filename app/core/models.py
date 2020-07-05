@@ -81,10 +81,7 @@ class Account(models.Model):
     last_updated = models.DateTimeField(auto_now=True, editable=False)
 
     def __str__(self):
-        if self.is_active:
-            return f'{self.account_name} (pk={self.pk})'
-        else:
-            return ""
+        return f'{self.account_name} (pk={self.pk})'
 
 
 class Action(models.Model):
@@ -95,6 +92,8 @@ class Action(models.Model):
         on_delete=models.DO_NOTHING,
     )
     tags = models.ManyToManyField("Tag", blank=True)
+    category = models.ForeignKey(
+        "Category", on_delete=models.DO_NOTHING)
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
