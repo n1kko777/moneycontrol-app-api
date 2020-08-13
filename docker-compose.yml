@@ -1,0 +1,27 @@
+version: "3"
+services:
+  web:
+    build: ./web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./web/app:/app
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      - DEBUG=TRUE
+
+  db:
+    image: postgres:12-alpine
+    environment:
+      - POSTGRES_PASSWORD=${SQL_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+volumes:
+  postgres_data:
+# TIP: docker-compsoe automatically adds folder name as prefix
+# to volumes' names. It could cause problems if you change folder name
+# to control this you can run docker-compose with -p flag
+# example: docker-compose -p "your_prefix" up
