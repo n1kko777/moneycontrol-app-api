@@ -16,6 +16,8 @@ services:
   db:
     image: postgres:12-alpine
     environment:
+      - POSTGRES_DB=${SQL_DATABASE}
+      - POSTGRES_USER=${SQL_USER}
       - POSTGRES_PASSWORD=${SQL_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
