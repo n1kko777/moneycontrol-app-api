@@ -7,7 +7,7 @@ services:
     volumes:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn app.wsgi:application --bind 0.0.0.0:8000
     depends_on:
       - db
     env_file: .env
