@@ -4,6 +4,8 @@ services:
     build: ./web
     expose:
       - 8000
+    ports:
+    - 8000:8000
     volumes:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
