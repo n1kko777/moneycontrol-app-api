@@ -131,3 +131,4 @@ dmypy.json
 app/static/*
 app/media
 !app/static/images/
+*.sql
