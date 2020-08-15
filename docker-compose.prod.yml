@@ -4,8 +4,6 @@ services:
     build: ./web
     expose:
       - 8000
-    ports:
-    - 8000:8000
     volumes:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
@@ -24,6 +22,17 @@ services:
       - POSTGRES_PASSWORD=${SQL_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+
+  nginx:
+    build: ./nginx
+    container_name: mncntrl-nginx
+    volumes:
+      - static_volume:/vol/web/static
+      - media_volume:/vol/web/media
+    ports:
+      - "81:80"
+    depends_on:
+      - web
 
 volumes:
   postgres_data:
