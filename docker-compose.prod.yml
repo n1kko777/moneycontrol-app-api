@@ -37,10 +37,13 @@ services:
       - media_volume:/vol/web/media
     labels:
       - "traefik.enable=true"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.frontend.entryPoints=[http,https]"
+      - "traefik.frontend.headers.SSLRedirect=true"
       - "traefik.frontend.rule=Host:mncntrl.ru"
       - "traefik.docker.network=web"
       - "traefik.backend=nginx"
-      - "traefik.port=80"
+      - "traefik.port=443"
     depends_on:
       - web
 
