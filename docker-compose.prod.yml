@@ -28,9 +28,9 @@ services:
   nginx:
     build: ./nginx
     restart: always
-    environment:
-      VIRTUAL_HOST: mncntrl.ru
     container_name: mncntrl-nginx
+    environment:
+      - VIRTUAL_HOST=mncntrl.ru,www.mncntrl.ru
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
       - static_volume:/vol/web/static
