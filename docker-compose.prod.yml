@@ -2,6 +2,7 @@ version: "3"
 services:
   web:
     build: ./web
+    restart: always
     expose:
       - 8000
     volumes:
@@ -16,6 +17,7 @@ services:
 
   db:
     image: postgres:12-alpine
+    restart: always
     environment:
       - POSTGRES_DB=${SQL_DATABASE}
       - POSTGRES_USER=${SQL_USER}
@@ -25,6 +27,9 @@ services:
 
   nginx:
     build: ./nginx
+    restart: always
+    environment:
+      VIRTUAL_HOST: mncntrl.ru
     container_name: mncntrl-nginx
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
@@ -35,6 +40,11 @@ services:
       - "443:443"
     depends_on:
       - web
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
 
 volumes:
   postgres_data:
