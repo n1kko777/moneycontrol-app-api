@@ -27,10 +27,12 @@ services:
     build: ./nginx
     container_name: mncntrl-nginx
     volumes:
+      - /etc/letsencrypt/:/etc/letsencrypt/
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - web
 
