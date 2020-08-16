@@ -27,26 +27,19 @@ services:
 
   nginx:
     build: ./nginx
-    expose:
-      - "81"
-    container_name: mncntrl-nginx
+    restart: always
     environment:
-      - VIRTUAL_HOST=mncntrl.ru,www.mncntrl.ru
-      - VIRTUAL_PORT=81
+      VIRTUAL_HOST: mncntrl.ru
+    container_name: mncntrl-nginx
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
-    networks:
-      - proxy
-    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
     depends_on:
       - web
-
-networks:
-  proxy:
-    external:
-      name: nginx-proxy
 
 volumes:
   postgres_data:
