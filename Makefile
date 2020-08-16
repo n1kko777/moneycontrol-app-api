@@ -14,7 +14,7 @@ build_prod:
 	docker-compose -f docker-compose.prod.yml build
 up_prod:
 	docker-compose -f docker-compose.prod.yml up -d
-dowm_prod:
+down_prod:
 	docker-compose -f docker-compose.prod.yml down
 test_prod:
 	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py test"

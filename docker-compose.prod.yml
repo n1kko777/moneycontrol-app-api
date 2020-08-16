@@ -41,6 +41,10 @@ services:
     depends_on:
       - web
 
+networks:
+  default:
+    external:
+      name: mncntrl-nginx
 volumes:
   postgres_data:
   static_volume:
