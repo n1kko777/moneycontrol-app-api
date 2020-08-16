@@ -29,21 +29,13 @@ services:
     build: ./nginx
     restart: always
     container_name: mncntrl-nginx
-    networks:
-      - web
     volumes:
       - /etc/letsencrypt/:/etc/letsencrypt/
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.passHostHeader=true"
-      - "traefik.frontend.entryPoints=[http,https]"
-      - "traefik.frontend.headers.SSLRedirect=true"
-      - "traefik.frontend.rule=Host:mncntrl.ru"
-      - "traefik.docker.network=web"
-      - "traefik.backend=nginx"
-      - "traefik.port=443"
+    ports:
+      - "80:80"
+      - "443:443"
     depends_on:
       - web
 
@@ -51,7 +43,3 @@ volumes:
   postgres_data:
   static_volume:
   media_volume:
-
-networks:
-  web:
-    external: true
