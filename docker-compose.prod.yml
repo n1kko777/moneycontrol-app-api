@@ -36,8 +36,8 @@ services:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
     ports:
-      - "80:80"
-      - "443:443"
+      - "81:80"
+      - "444:443"
     depends_on:
       - web
 
