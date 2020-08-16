@@ -30,7 +30,7 @@ services:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
     ports:
-      - "00:80"
+      - "80:80"
     depends_on:
       - web
 
