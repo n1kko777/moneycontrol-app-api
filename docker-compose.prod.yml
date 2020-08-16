@@ -41,11 +41,6 @@ services:
     depends_on:
       - web
 
-networks:
-  default:
-    external:
-      name: nginx-proxy
-
 volumes:
   postgres_data:
   static_volume:
