@@ -1,6 +1,6 @@
 Django>=2.2.0,<2.3.0
 psycopg2>=2.8.2,<2.9.0
-uWSGI>=2.0.18,<2.1.0
+gunicorn>=19.9.0,<19.10.0
 djangorestframework>=3.9.0,<3.10.0
 dj-rest-auth>=1.0.4,<1.1.0
 django-rest-swagger>=2.2.0,<2.3.0
