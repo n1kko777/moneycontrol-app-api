@@ -15,11 +15,6 @@ services:
     env_file: .env
     environment:
       - DEBUG=FALSE
-      - VIRTUAL_HOST=${DOMAIN}
-      - VIRTUAL_PORT=8000
-      - VIRTUAL_PROTO=uwsgi
-      - LETSENCRYPT_HOST=${DOMAIN}
-      - LETSENCRYPT_EMAIL=${EMAIL_HOST_USER}
 
   db:
     image: postgres:12-alpine
@@ -31,21 +26,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
-  # nginx:
-  #   build: ./nginx
-  #   restart: always
-  #   environment:
-  #     VIRTUAL_HOST: mncntrl.ru
-  #   container_name: mncntrl-nginx
-  #   volumes:
-  #     - /etc/letsencrypt/:/etc/letsencrypt/
-  #     - static_volume:/vol/web/static
-  #     - media_volume:/vol/web/media
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   depends_on:
-  #     - web
+  nginx:
+    build: ./nginx
+    restart: always
+    environment:
+      VIRTUAL_HOST: mncntrl.ru
+    container_name: mncntrl-nginx
+    volumes:
+      - /etc/letsencrypt/:/etc/letsencrypt/
+      - static_volume:/vol/web/static
+      - media_volume:/vol/web/media
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
 
 volumes:
   postgres_data:
