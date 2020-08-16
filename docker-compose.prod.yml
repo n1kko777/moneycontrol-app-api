@@ -30,14 +30,7 @@ services:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
     ports:
-      - "81:80"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.entrypoints=https"
-      - "traefik.http.routers.backend.rule=Host(`mncntrl.ru`)"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=letsEncrypt"
-      - "traefik.http.services.test-service.loadbalancer.server.port=81"
+      - "00:80"
     depends_on:
       - web
 
