@@ -70,11 +70,5 @@ urlpatterns = [
         name='profile-login'),
 
     url(r'^docs/$', get_swagger_view(title='API Docs'), name='api_docs'),
-]
-
-
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL,
-                          document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# to have images urls in dev. in prod we don't need this, because of nginx
