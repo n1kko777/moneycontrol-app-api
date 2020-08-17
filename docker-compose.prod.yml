@@ -30,12 +30,12 @@ services:
     restart: always
     container_name: mncntrl-nginx
     volumes:
-      - /etc/letsencrypt/:/etc/letsencrypt/
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
-    ports:
-      - "80:80"
-      - "443:443"
+      environment:
+        - VIRTUAL_HOST=${DOMAIN}
+        - LETSENCRYPT_HOST=${DOMAIN}
+        - LETSENCRYPT_EMAIL=${EMAIL_HOST_USER}
     depends_on:
       - web
 
