@@ -32,10 +32,10 @@ services:
     volumes:
       - static_volume:/vol/web/static
       - media_volume:/vol/web/media
-      environment:
-        - VIRTUAL_HOST=${DOMAIN}
-        - LETSENCRYPT_HOST=${DOMAIN}
-        - LETSENCRYPT_EMAIL=${EMAIL_HOST_USER}
+    environment:
+      - VIRTUAL_HOST=${DOMAIN}
+      - LETSENCRYPT_HOST=${DOMAIN}
+      - LETSENCRYPT_EMAIL=${EMAIL_HOST_USER}
     depends_on:
       - web
 
