@@ -8,8 +8,8 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Testing...
-        uses: actions/checkout@v2
         env:
           SECRET_KEY: please_change_me
           ALLOWED_HOSTS: 0.0.0.0,
