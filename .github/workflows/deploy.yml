@@ -1,6 +1,6 @@
 name: Deploy
 on:
-  pull_request:
+  push:
     branches: [master]
 
 jobs:
@@ -18,4 +18,5 @@ jobs:
           script: |
             cd ./code/moneycontrol-app-api
             git fetch && git pull origin master
-            git status
+            make down_prod
+            make up_prod
