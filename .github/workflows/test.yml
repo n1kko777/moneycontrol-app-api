@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Testing...
-        run: docker network create proxy-bypass
-        run: make build_prod
-        run: make test_prod
+      - run: docker network create proxy-bypass
+      - run: make build_prod
+      - run: make test_prod
