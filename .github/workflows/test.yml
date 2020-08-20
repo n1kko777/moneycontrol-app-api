@@ -8,8 +8,22 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - name: Testing...
-      - run: docker network create proxy-bypass
-      - run: make build_prod
-      - run: make test_prod
+        uses: actions/checkout@v2
+        env:
+          SECRET_KEY: please_change_me
+          ALLOWED_HOSTS: 0.0.0.0,
+          DOMAIN: example.com,
+          SQL_ENGINE: django.db.backends.postgresql
+          SQL_DATABASE: postgres
+          SQL_USER: postgres
+          SQL_PASSWORD: password
+          SQL_HOST: db
+          SQL_PORT: 5432
+          DATABASE: postgres
+          EMAIL_HOST_USER: test@example.com
+          EMAIL_HOST_PASSWORD: please_change_me
+        run: |
+          docker network create proxy-bypass
+          make build_prod
+          make test_prod
