@@ -16,6 +16,6 @@ jobs:
           key: ${{ secrets.KEY }}
           port: 22
           script: |
-            cd /code/moneycontrol-app-api
+            cd ./code/moneycontrol-app-api
             git fetch && git pull origin master
             git status
