@@ -1,0 +1,28 @@
+name: Test
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Testing...
+        run: |
+          echo -e "SECRET_KEY=please_change_me\n
+          ALLOWED_HOSTS=0.0.0.0,\n
+          DOMAIN=example.com,\n
+          SQL_ENGINE=django.db.backends.postgresql\n
+          SQL_DATABASE=postgres\n
+          SQL_USER=postgres\n
+          SQL_PASSWORD=password\n
+          SQL_HOST=db\n
+          SQL_PORT=5432\n
+          DATABASE=postgres\n
+          EMAIL_HOST_USER=test@example.com\n
+          EMAIL_HOST_PASSWORD=please_change_me\n" >> .env
+          docker network create proxy-bypass
+          make build_prod
+          make test_prod
