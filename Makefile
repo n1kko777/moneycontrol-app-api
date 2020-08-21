@@ -3,7 +3,7 @@ make_migr:
 migr:
 	docker-compose run --rm web sh -c "python manage.py migrate"
 test:
-	docker-compose run --rm web sh -c "python manage.py test"
+	docker-compose run --rm web sh -c "python manage.py test && flake8"
 super:
 	docker-compose run --rm web sh -c "python manage.py createsuperuser"
 shell:
@@ -17,4 +17,4 @@ up_prod:
 down_prod:
 	docker-compose -f docker-compose.prod.yml down
 test_prod:
-	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py test"
+	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py test && flake8"
