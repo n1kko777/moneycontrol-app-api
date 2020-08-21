@@ -209,6 +209,17 @@ class AccountViewSet(viewsets.ModelViewSet):
             content = {'error': 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        if models.Account.objects.filter(
+            account_name=self.request.data['account_name'],
+            profile=models.Profile.objects.get
+            (
+                user=self.request.user
+            )
+        ).exists():
+            content = {
+                'error': 'Счет с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         serializer.save(profile=models.Profile.objects.get(
             user=self.request.user), company=models.Profile.objects.get(
             user=self.request.user).company)
@@ -216,6 +227,30 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Account.objects.filter(
+            account_name=self.request.data['account_name'],
+            profile=models.Profile.objects.get
+            (
+                user=self.request.user
+            )
+        ).exclude(id=pk).exists():
+            content = {
+                'error': 'Счет с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_update(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
             headers=headers
         )
 
@@ -526,11 +561,42 @@ class CategoryViewSet(viewsets.ModelViewSet):
             content = {'error': 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        if models.Category.objects.filter(
+            category_name=self.request.data['category_name'],
+            company=profile.company
+        ).exists():
+            content = {'error': 'Категория с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Category.objects.filter(
+            category_name=self.request.data['category_name'],
+            company=models.Profile.objects.get
+            (
+                user=self.request.user
+            ).company
+        ).exclude(id=pk).exists():
+            content = {
+                'error': 'Категория с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_update(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
             headers=headers
         )
 
@@ -596,11 +662,41 @@ class TagViewSet(viewsets.ModelViewSet):
             content = {'error': 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        if models.Tag.objects.filter(
+            tag_name=self.request.data['tag_name'],
+            company=profile.company
+        ).exists():
+            content = {'error': 'Тег с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if models.Tag.objects.filter(
+            tag_name=self.request.data['tag_name'],
+            company=models.Profile.objects.get
+            (
+                user=self.request.user
+            ).company
+        ).exclude(id=pk).exists():
+            content = {'error': 'Тег с таким названием уже существует!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_update(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
             headers=headers
         )
 
