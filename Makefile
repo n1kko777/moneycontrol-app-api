@@ -13,7 +13,7 @@ ssh_w:
 build_prod:
 	docker-compose -f docker-compose.prod.yml build
 up_prod:
-	docker-compose -f docker-compose.prod.yml up -d
+	docker-compose -f docker-compose.prod.yml up --build -d
 down_prod:
 	docker-compose -f docker-compose.prod.yml down
 test_prod:
