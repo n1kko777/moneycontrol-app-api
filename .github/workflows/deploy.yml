@@ -4,7 +4,7 @@ on:
     branches: [master]
 
 jobs:
-  test:
+  test-and-deploy:
     name: Test
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +27,6 @@ jobs:
           make build_prod
           make test_prod
 
-  deploy:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
