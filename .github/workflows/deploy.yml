@@ -27,8 +27,6 @@ jobs:
           make build_prod
           make test_prod
 
-    name: Deploy
-    runs-on: ubuntu-latest
     steps:
       - name: Deploying via SSH
         uses: appleboy/ssh-action@master
