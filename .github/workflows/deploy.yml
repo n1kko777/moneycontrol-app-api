@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-and-deploy:
-    name: Test
+    name: Test && Deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
