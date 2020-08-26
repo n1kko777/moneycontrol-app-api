@@ -31,7 +31,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
             return self.queryset\
-                .filter(company_id=profile.company_identificator)
+                .filter(company_id=profile.company_identificator)\
+                .order_by('-last_updated')
 
     def perform_create(self, serializer):
         serializer.save()
@@ -107,7 +108,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             profiles = models.Profile.objects.filter(
                 company=profiles[0].company)
 
-        return profiles
+        return profiles\
+            .order_by('-last_updated')
 
     def perform_create(self, serializer):
         """Create a new pfofile"""
@@ -189,10 +191,12 @@ class AccountViewSet(viewsets.ModelViewSet):
                 .filter(user=self.request.user)[0]
 
             if profile.is_admin:
-                return models.Account.objects.filter(company=profile.company)
+                return models.Account.objects.filter(company=profile.company)\
+                    .order_by('-last_updated')
 
             return models.Account.objects\
-                .filter(profile=profile, company=profile.company)
+                .filter(profile=profile, company=profile.company)\
+                .order_by('-last_updated')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -304,7 +308,8 @@ class ActionViewSet(mixins.CreateModelMixin,
                 accounts = models.Account.objects\
                     .filter(profile=profile, company=profile.company)
 
-            return self.queryset.filter(account__in=accounts)
+            return self.queryset.filter(account__in=accounts)\
+                .order_by('-last_updated')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -370,8 +375,10 @@ class TransferViewSet(mixins.CreateModelMixin,
                 accounts = models.Account.objects\
                     .filter(profile=profile, company=profile.company)
 
-            return self.queryset.filter(from_account__in=accounts) \
-                or self.queryset.filter(to_account__in=accounts)
+            return self.queryset.filter(from_account__in=accounts)\
+                .order_by('-last_updated') \
+                or self.queryset.filter(to_account__in=accounts)\
+                .order_by('-last_updated')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -481,7 +488,8 @@ class TransactionViewSet(mixins.CreateModelMixin,
                 accounts = models.Account.objects\
                     .filter(profile=profile, company=profile.company)
 
-            return self.queryset.filter(account__in=accounts)
+            return self.queryset.filter(account__in=accounts)\
+                .order_by('-last_updated')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -536,7 +544,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
-            return models.Category.objects.filter(company=profile.company)
+            return models.Category.objects.filter(company=profile.company)\
+                .order_by('-last_updated')
 
     def perform_create(self, serializer):
         """Create a new category"""
@@ -635,7 +644,8 @@ class TagViewSet(viewsets.ModelViewSet):
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
-            return models.Tag.objects.filter(company=profile.company)
+            return models.Tag.objects.filter(company=profile.company)\
+                .order_by('-last_updated')
 
     def perform_create(self, serializer):
         """Create a new tag"""
