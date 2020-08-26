@@ -27,7 +27,6 @@ jobs:
           make build_prod
           make test_prod
 
-    steps:
       - name: Deploying via SSH
         uses: appleboy/ssh-action@master
         with:
