@@ -513,7 +513,7 @@ class TransactionViewSet(mixins.CreateModelMixin,
         try:
             models.Transaction.make_transaction(**serializer.validated_data)
         except ValueError:
-            content = {'error': 'Недостаточно средств'}
+            content = {'error': 'Некорректные данные'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         headers = self.get_success_headers(serializer.data)
