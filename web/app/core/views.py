@@ -113,17 +113,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Create a new pfofile"""
-        serializer.save(user=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         if models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
             content = {'error': 'У вас может быть только один профиль!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
