@@ -65,10 +65,6 @@ def sample_account(self, profile, company, **params):
         **defaults
     )
 
-    res = self.client.post(COMPANY_URL, defaults)
-
-    return Company.objects.get(id=res.data['id'])
-
 
 class PublicCoreApiTest(TestCase):
     """Test unauthenticated recipe API request"""
