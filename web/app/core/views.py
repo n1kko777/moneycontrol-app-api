@@ -35,12 +35,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 .order_by('-last_updated')
 
     def perform_create(self, serializer):
-        serializer.save()
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,).exists():
             content = {'error': 'Профиль не найден!'}
@@ -52,6 +46,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
             content = {'error': 'Вы уже состоите в компании!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+        serializer.save()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -60,15 +60,18 @@ class CompanyViewSet(viewsets.ModelViewSet):
             headers=headers
         )
 
-    def update(self, request, pk=None):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def perform_update(self, serializer):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user)[0].is_admin:
             content = {'error': 'Только администратор может удалить компанию!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
