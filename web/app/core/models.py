@@ -1,6 +1,6 @@
 import os
 import uuid
-from django.db import models, transaction
+from django.db import models
 from django.conf import settings
 
 
@@ -154,24 +154,6 @@ class Transaction(models.Model):
 
     def __str__(self):
         return str(self.pk)
-
-    @classmethod
-    def make_transaction(cls, transaction_amount, account,
-                         category, tags, **args):
-
-        with transaction.atomic():
-            account.balance -= transaction_amount
-            account.save()
-            tran = cls.objects.create(
-                transaction_amount=transaction_amount,
-                account=account,
-                company=account.profile.company,
-                category=category,
-            )
-
-            tran.tags.set(tags)
-
-        return account, tran
 
 
 class Category(models.Model):

@@ -138,43 +138,6 @@ class ModelTest(TestCase):
         self.assertEqual(
             str(transaction), str(transaction.pk))
 
-    def test_make_transaction_success(self):
-        """Make succesful transaction"""
-        profile = sample_profile()
-        company = models.Company.objects.create(company_name="Test Company")
-        profile.company = company
-        profile.company_identificator = company.company_id
-        profile.is_admin = True
-        profile.save()
-
-        initial_balance = 1000
-        trans_amount = 500
-
-        account = models.Account.objects.create(
-            profile=profile,
-            company=company,
-            balance=initial_balance,
-            account_name='Test',
-        )
-
-        models.Transaction.make_transaction(
-            transaction_amount=trans_amount,
-            account=account,
-            category=models.Category.objects.create(
-                category_name="test", company=company),
-            tags=[],
-            merchant='bk'
-        )
-
-        account.refresh_from_db()
-
-        expected_balance = initial_balance - trans_amount
-
-        transactions = models.Transaction.objects.all()
-
-        self.assertEqual(expected_balance, account.balance)
-        self.assertEqual(len(transactions), 1)
-
     def test_transfer_str(self):
         """Test the transfer string representation"""
 

@@ -13,6 +13,8 @@ from rest_framework.generics import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 
+import decimal
+
 User = get_user_model()
 
 
@@ -494,11 +496,7 @@ class TransactionViewSet(mixins.CreateModelMixin,
             return self.queryset.filter(account__in=accounts)\
                 .order_by('-last_updated')
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        serializer.is_valid(raise_exception=True)
-
+    def perform_create(self, serializer):
         profile = models.Profile.objects\
             .all().filter(user=self.request.user)[0]
 
@@ -509,16 +507,29 @@ class TransactionViewSet(mixins.CreateModelMixin,
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
-                user=self.request.user).company is None:
+                user=self.request.user
+        ).company is None:
             content = {'error': 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            models.Transaction.make_transaction(**serializer.validated_data)
+            account = models.Account.objects.get(
+                id=self.request.data['account']
+            )
+            account.balance = account.balance - \
+                decimal.Decimal(self.request.data['transaction_amount'])
+            account.save()
+            serializer.save(company=models.Profile.objects.get(
+                user=self.request.user).company)
         except ValueError:
             content = {'error': 'Некорректные данные'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
