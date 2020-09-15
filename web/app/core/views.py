@@ -37,22 +37,22 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 .order_by('-last_updated')
 
     def perform_create(self, serializer):
-        if not models.Profile.objects.all()\
-                .filter(user=self.request.user,).exists():
-            content = {'error': 'Профиль не найден!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        if models.Profile.objects.get(
-            user=self.request.user
-        ).company is not None:
-            content = {'error': 'Вы уже состоите в компании!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
         serializer.save()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user,).exists():
+            content = {"detail": 'Профиль не найден!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        if models.Profile.objects.get(
+            user=self.request.user
+        ).company is not None:
+            content = {"detail": 'Вы уже состоите в компании!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -63,17 +63,19 @@ class CompanyViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        if not models.Profile.objects.all()\
-                .filter(user=self.request.user)[0].is_admin:
-            content = {'error': 'Только администратор может удалить компанию!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
         serializer.save()
 
     def update(self, request, pk=None):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if not models.Profile.objects.all()\
+                .filter(user=self.request.user)[0].is_admin:
+            content = {
+                "detail": 'Только администратор может удалить компанию!'
+            }
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -88,7 +90,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user)[0].is_admin:
-            content = {'error': 'Только администратор может удалить компанию!'}
+            content = {
+                "detail": 'Только администратор может удалить компанию!'
+            }
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         instance.delete()
@@ -118,17 +122,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Create a new pfofile"""
-        if models.Profile.objects.all()\
-                .filter(user=self.request.user,
-                        company__isnull=False).exists():
-            content = {'error': 'У вас может быть только один профиль!'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if models.Profile.objects.all()\
+                .filter(user=self.request.user,
+                        company__isnull=False).exists():
+            content = {"detail": 'У вас может быть только один профиль!'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -168,7 +172,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             print(e)
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Невозможно удалить профиль, ' +
                         'который используется в операциях.'
                 },
@@ -204,15 +208,23 @@ class AccountViewSet(viewsets.ModelViewSet):
                 .order_by('-last_updated')
 
     def perform_create(self, serializer):
+        serializer.save(profile=models.Profile.objects.get(
+            user=self.request.user), company=models.Profile.objects.get(
+            user=self.request.user).company)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'Профиль не найден!'}
+            content = {"detail": 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
                 user=self.request.user).company is None:
-            content = {'error': 'Вы не являетесь сотрудником компании'}
+            content = {"detail": 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Account.objects.filter(
@@ -223,16 +235,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             )
         ).exists():
             content = {
-                'error': 'Счет с таким названием уже существует!'}
+                "detail": 'Счет с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer.save(profile=models.Profile.objects.get(
-            user=self.request.user), company=models.Profile.objects.get(
-            user=self.request.user).company)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -243,6 +247,13 @@ class AccountViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer, pk=None):
+        serializer.save()
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         if models.Account.objects.filter(
             account_name=self.request.data['account_name'],
             profile=models.Profile.objects.get
@@ -251,15 +262,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             )
         ).exclude(id=pk).exists():
             content = {
-                'error': 'Счет с таким названием уже существует!'}
+                "detail": 'Счет с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer.save()
-
-    def update(self, request, pk=None):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
 
         self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -273,7 +277,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
 
         if instance.balance != 0:
-            content = {'error': 'Баланс должен быть равен 0!'}
+            content = {"detail": 'Баланс должен быть равен 0!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -285,7 +289,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             print(e)
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Невозможно удалить счет, ' +
                         'который используется в операциях.'
                 },
@@ -323,28 +327,30 @@ class ActionViewSet(mixins.CreateModelMixin,
                 .order_by('-last_updated')
 
     def perform_create(self, serializer):
-        try:
-            profile = models.Profile.objects\
-                .all().filter(user=self.request.user)[0]
-            account = models.Account.objects.filter(profile=profile)\
-                .get(pk=self.request.data['account'])
-        except Exception as e:
-            print(e)
-            content = {'error': 'Указанный счет не найден'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        if models.Profile.objects.get(
-                user=self.request.user).company is None:
-            content = {'error': 'Вы не являетесь сотрудником компании'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
+        profile = models.Profile.objects\
+            .all().get(user=self.request.user)
+        account = models.Account.objects.filter(profile=profile)\
+            .get(pk=self.request.data['account'])
         serializer.save(account=account,
-                        company=models.Profile.objects.get(
-                            user=self.request.user).company)
+                        company=profile.company)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        try:
+            profile = models.Profile.objects.get(user=self.request.user)
+            models.Account.objects.get(
+                profile=profile, pk=self.request.data['account'])
+        except Exception as e:
+            print(e)
+            content = {"detail": 'Указанный счет не найден'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        if models.Profile.objects.get(
+                user=self.request.user).company is None:
+            content = {"detail": 'Вы не являетесь сотрудником компании'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -393,6 +399,10 @@ class TransferViewSet(mixins.CreateModelMixin,
                 or self.queryset.filter(to_account__in=accounts)\
                 .order_by('-last_updated')
 
+    def perform_create(self, serializer):
+        serializer.save(company=models.Profile.objects.get(
+            user=self.request.user).company)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -407,26 +417,17 @@ class TransferViewSet(mixins.CreateModelMixin,
                 )
         except Exception as e:
             print(e)
-            content = {'error': 'Указанный счет не найден'}
+            content = {"detail": 'Указанный счет не найден'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
                 user=self.request.user).company is None:
-            content = {'error': 'Вы не являетесь сотрудником компании'}
+            content = {"detail": 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         transfer_to_account = models.Account.objects.get(
             pk=self.request.data['to_account']
         )
-
-        try:
-            make_transfer(**serializer.validated_data)
-        except Exception as e:
-            print(e)
-            content = {
-                'error': 'Неверно указан счет получателя.'
-            }
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             if transfer_from_account.profile != transfer_to_account.profile:
@@ -451,12 +452,21 @@ class TransferViewSet(mixins.CreateModelMixin,
             print(e)
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Произошла ошибка на сервере. Повторите попытку позже.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        try:
+            make_transfer(**serializer.validated_data)
+        except ValueError as e:
+            content = {
+                "detail": str(e)
+            }
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
@@ -505,19 +515,26 @@ class TransactionViewSet(mixins.CreateModelMixin,
                 .order_by('-last_updated')
 
     def perform_create(self, serializer):
+        serializer.save(company=models.Profile.objects.get(
+            user=self.request.user).company)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         profile = models.Profile.objects\
             .all().filter(user=self.request.user)[0]
 
         if not models.Account.objects.filter(profile=profile)\
                 .filter(pk=self.request.data['account']).exists():
 
-            content = {'error': 'Указанный счет не найден'}
+            content = {"detail": 'Указанный счет не найден'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Profile.objects.get(
                 user=self.request.user
         ).company is None:
-            content = {'error': 'Вы не являетесь сотрудником компании'}
+            content = {"detail": 'Вы не являетесь сотрудником компании'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -527,15 +544,10 @@ class TransactionViewSet(mixins.CreateModelMixin,
             account.balance = account.balance - \
                 decimal.Decimal(self.request.data['transaction_amount'])
             account.save()
-            serializer.save(company=models.Profile.objects.get(
-                user=self.request.user).company)
-        except ValueError:
-            content = {'error': 'Некорректные данные'}
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        except ValueError:
+            content = {"detail": 'Некорректные данные'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -585,18 +597,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'Профиль не найден!'}
+            content = {"detail": 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if not profile.company:
-            content = {'error': 'Компания не найдена!'}
+            content = {"detail": 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Category.objects.filter(
             category_name=self.request.data['category_name'],
             company=profile.company
         ).exists():
-            content = {'error': 'Категория с таким названием уже существует!'}
+            content = {"detail": 'Категория с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
@@ -620,7 +632,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             ).company
         ).exclude(id=pk).exists():
             content = {
-                'error': 'Категория с таким названием уже существует!'}
+                "detail": 'Категория с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_update(serializer)
@@ -643,7 +655,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             print(e)
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Невозможно удалить категорию, ' +
                         'которая используется в операциях.'
                 },
@@ -687,18 +699,18 @@ class TagViewSet(viewsets.ModelViewSet):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
-            content = {'error': 'Профиль не найден!'}
+            content = {"detail": 'Профиль не найден!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if not profile.company:
-            content = {'error': 'Компания не найдена!'}
+            content = {"detail": 'Компания не найдена!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         if models.Tag.objects.filter(
             tag_name=self.request.data['tag_name'],
             company=profile.company
         ).exists():
-            content = {'error': 'Тег с таким названием уже существует!'}
+            content = {"detail": 'Тег с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
@@ -721,7 +733,7 @@ class TagViewSet(viewsets.ModelViewSet):
                 user=self.request.user
             ).company
         ).exclude(id=pk).exists():
-            content = {'error': 'Тег с таким названием уже существует!'}
+            content = {"detail": 'Тег с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_update(serializer)
@@ -744,7 +756,7 @@ class TagViewSet(viewsets.ModelViewSet):
             print(e)
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Невозможно удалить тег, ' +
                     'который используется в операциях.'
                 },
@@ -771,7 +783,7 @@ class JoinProfileToCompany(
         if not profile:
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'У Вас не создан профиль сотрудника'
                 },
                 status=status.HTTP_400_BAD_REQUEST
@@ -783,7 +795,7 @@ class JoinProfileToCompany(
                     pk=request.data['profile_id']).exists():
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Пользователь с указанным ID не найден'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -795,7 +807,7 @@ class JoinProfileToCompany(
             if new_team_member.company is not None:
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Пользователь уже состоит в другой или Вашей компании'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -805,7 +817,7 @@ class JoinProfileToCompany(
                     str(request.data['profile_phone']):
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Неверно указан номер телефона'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -830,7 +842,7 @@ class JoinProfileToCompany(
                 print(e)
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Произошла ошибка на сервере. Повторите попытку позже.'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -840,7 +852,7 @@ class JoinProfileToCompany(
 
             return Response(
                 {
-                    'detail':
+                    "detail":
                     f'{new_team_member.first_name} ' +
                     f'{new_team_member.last_name} ' +
                         'добавлен в Вашу компанию'
@@ -850,7 +862,7 @@ class JoinProfileToCompany(
         else:
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Только администратор может добавить сотрудника'
                 },
                 status=status.HTTP_400_BAD_REQUEST
@@ -876,7 +888,7 @@ class RemoveProfileFromCompany(
         if not profile:
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'У Вас не создан профиль сотрудника'
                 },
                 status=status.HTTP_400_BAD_REQUEST
@@ -885,7 +897,7 @@ class RemoveProfileFromCompany(
         if profile.pk == request.data['profile_id']:
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Вы не можете удалить себя.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
@@ -897,7 +909,7 @@ class RemoveProfileFromCompany(
                     pk=request.data['profile_id']).exists():
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Пользователь с указанным ID не найден'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -909,7 +921,7 @@ class RemoveProfileFromCompany(
             if old_team_member.company is None:
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Пользователь не состоит ни в какой из компаний.'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -919,7 +931,7 @@ class RemoveProfileFromCompany(
                     str(request.data['profile_phone']):
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Неверно указан номер телефона'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -944,7 +956,7 @@ class RemoveProfileFromCompany(
                 print(e)
                 return Response(
                     {
-                        'detail':
+                        "detail":
                         'Произошла ошибка на сервере. Повторите попытку позже.'
                     },
                     status=status.HTTP_400_BAD_REQUEST
@@ -954,7 +966,7 @@ class RemoveProfileFromCompany(
 
             return Response(
                 {
-                    'detail':
+                    "detail":
                     f'{old_team_member.first_name} ' +
                     f'{old_team_member.last_name} ' +
                         'удален из Вашей компании.'
@@ -964,7 +976,7 @@ class RemoveProfileFromCompany(
         else:
             return Response(
                 {
-                    'detail':
+                    "detail":
                     'Только администратор может удалить сотрудника'
                 },
                 status=status.HTTP_400_BAD_REQUEST
