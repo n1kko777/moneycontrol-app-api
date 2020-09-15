@@ -6,6 +6,8 @@ COPY ./requirements.txt requirements.txt
 COPY ./app /app
 COPY ./entrypoint.sh /entrypoint.sh
 
+RUN /usr/local/bin/python -m pip install --upgrade pip
+
 # install psycopg
 # jpeg-dev and musl-dev zlib zlib-dev in case you will use Pillow
 

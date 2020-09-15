@@ -203,10 +203,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 .filter(profile=profile, company=profile.company)\
                 .order_by('-last_updated')
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def perform_create(self, serializer):
         if not models.Profile.objects.all()\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
@@ -232,6 +229,12 @@ class AccountViewSet(viewsets.ModelViewSet):
         serializer.save(profile=models.Profile.objects.get(
             user=self.request.user), company=models.Profile.objects.get(
             user=self.request.user).company)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data,
@@ -239,11 +242,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             headers=headers
         )
 
-    def update(self, request, pk=None):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def perform_update(self, serializer, pk=None):
         if models.Account.objects.filter(
             account_name=self.request.data['account_name'],
             profile=models.Profile.objects.get
@@ -254,6 +253,13 @@ class AccountViewSet(viewsets.ModelViewSet):
             content = {
                 'error': 'Счет с таким названием уже существует!'}
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+    def update(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         self.perform_update(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -316,10 +322,7 @@ class ActionViewSet(mixins.CreateModelMixin,
             return self.queryset.filter(account__in=accounts)\
                 .order_by('-last_updated')
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def perform_create(self, serializer):
         try:
             profile = models.Profile.objects\
                 .all().filter(user=self.request.user)[0]
@@ -339,6 +342,11 @@ class ActionViewSet(mixins.CreateModelMixin,
                         company=models.Profile.objects.get(
                             user=self.request.user).company)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
