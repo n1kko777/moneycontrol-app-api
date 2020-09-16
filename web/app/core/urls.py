@@ -18,6 +18,7 @@ router.register("transaction", views.TransactionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('home-list/', views.HomeListView.as_view()),
     path('join-profile-to-company/', views.JoinProfileToCompany.as_view()),
     path('remove-profile-from-company/',
          views.RemoveProfileFromCompany.as_view())

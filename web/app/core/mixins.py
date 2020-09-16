@@ -20,7 +20,6 @@ class ServiceExceptionHandlerMixin:
     }
 
     def handle_exception(self, exc):
-        print('handele_exception was called')
         if isinstance(exc, tuple(self.expected_exceptions.keys())):
             drf_exception_class = self.expected_exceptions[exc.__class__]
             drf_exception = drf_exception_class(get_error_message(exc))
