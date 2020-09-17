@@ -4,50 +4,12 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Profile, Company, Tag
+from core.models import Tag
 from core.serializers import TagSerializer
-
-from faker import Faker
-import random
-
-
-fake = Faker()
-
-PROFILE_URL = '/api/v1/profile/'
-COMPANY_URL = '/api/v1/company/'
-
-TAG_URL = '/api/v1/tag/'
-
-
-def phn():
-    n = '0000000000'
-    while '9' in n[3:6] or n[3:6] == '000' or n[6] == n[7] == n[8] == n[9]:
-        n = str(random.randint(10**9, 10**10-1))
-    return n
-
-
-def sample_profile(user, **params):
-    """Create and return a sample profile"""
-    defaults = {
-        "first_name": fake.name().split(' ')[0],
-        "last_name": fake.name().split(' ')[1],
-        "phone": f'{phn()}',
-        "image": None
-    }
-    defaults.update(params)
-
-    return Profile.objects.create(user=user, **defaults)
-
-
-def sample_company(self):
-    """Create and return a sample company"""
-    payload = {
-        "company_name": fake.name()
-    }
-
-    res = self.client.post(COMPANY_URL, payload)
-
-    return Company.objects.get(id=res.data['id'])
+from .helper import sample_profile, \
+    sample_company, \
+    fake, \
+    TAG_URL
 
 
 class PublicCoreApiTest(TestCase):

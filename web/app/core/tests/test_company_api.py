@@ -4,51 +4,14 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Profile, Company
+from core.models import Company
 from core.serializers import CompanySerializer
-
-from faker import Faker
-import random
-
-fake = Faker()
-
-PROFILE_URL = '/api/v1/profile/'
-COMPANY_URL = '/api/v1/company/'
-JOIN_COMPANY_URL = '/api/v1/join-profile-to-company/'
-REMOVE_COMPANY_URL = '/api/v1/remove-profile-from-company/'
-
-
-def phn():
-    n = '0000000000'
-    while '9' in n[3:6] or n[3:6] == '000' or n[6] == n[7] == n[8] == n[9]:
-        n = str(random.randint(10**9, 10**10-1))
-    return n
-
-
-def sample_profile(user, **params):
-    """Create and return a sample profile"""
-    defaults = {
-        "first_name": fake.name().split(' ')[0],
-        "last_name": fake.name().split(' ')[1],
-        "phone": f'{phn()}',
-        "image": None
-    }
-    defaults.update(params)
-
-    return Profile.objects.create(user=user, **defaults)
-
-
-def sample_company(self):
-    """Create and return a sample company"""
-    sample_profile(user=self.user)
-
-    payload = {
-        "company_name": fake.name()
-    }
-
-    res = self.client.post(COMPANY_URL, payload)
-
-    return Company.objects.get(id=res.data['id'])
+from .helper import sample_profile, \
+    sample_company, \
+    fake, \
+    COMPANY_URL, \
+    JOIN_COMPANY_URL, \
+    REMOVE_COMPANY_URL
 
 
 class PublicCoreApiTest(TestCase):
@@ -78,6 +41,7 @@ class PrivateCompanyApiTests(TestCase):
 
     def test_retreive_company(self):
         """Test retreiving a company"""
+        sample_profile(self.user)
         sample_company(self)
 
         res = self.client.get(COMPANY_URL)

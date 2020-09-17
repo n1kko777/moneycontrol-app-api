@@ -11,33 +11,7 @@ from rest_framework.test import APIClient
 
 from core.models import Profile
 from core.serializers import ProfileSerializer
-
-from faker import Faker
-import random
-
-fake = Faker()
-
-PROFILE_URL = '/api/v1/profile/'
-
-
-def phn():
-    n = '0000000000'
-    while '9' in n[3:6] or n[3:6] == '000' or n[6] == n[7] == n[8] == n[9]:
-        n = str(random.randint(10**9, 10**10-1))
-    return n
-
-
-def sample_profile(user, **params):
-    """Create and return a sample profile"""
-    defaults = {
-        "first_name": fake.name().split(' ')[0],
-        "last_name": fake.name().split(' ')[1],
-        "phone": f'{phn()}',
-        "image": None
-    }
-    defaults.update(params)
-
-    return Profile.objects.create(user=user, **defaults)
+from .helper import PROFILE_URL, sample_profile, fake, phn
 
 
 class PublicCoreApiTest(TestCase):
