@@ -13,7 +13,6 @@ from rest_framework.generics import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Sum
-from operator import itemgetter
 
 
 import decimal
@@ -994,10 +993,27 @@ class HomeListView(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
-    def get(self, request, format=None):
-        if models.Profile.objects\
-                .filter(user=self.request.user,
-                        company__isnull=True).exists():
+    def post(self, request, format=None):
+        req_profile = None
+
+        if request.data.get("profile_id"):
+            req_profile = models.Profile.objects.get(
+                id=self.request.data['profile_id']
+            )
+
+            if req_profile.company != models.Profile.objects.get(
+                user=self.request.user
+            ).company:
+                return Response({
+                    "detail":
+                    "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            req_profile = models.Profile.objects.get(
+                user=self.request.user
+            )
+
+        if req_profile.company is None:
             return Response({
                 "detail": "Сначала необходимо создать " +
                 "компанию или присоединиться к ней."
@@ -1005,7 +1021,16 @@ class HomeListView(
 
         data = []
 
-        profile = models.Profile.objects.get(user=self.request.user)
+        profile = req_profile
+
+        accounts = None
+
+        if profile.is_admin:
+            accounts = models.Account.objects\
+                .filter(company=profile.company)
+        else:
+            accounts = models.Account.objects\
+                .filter(profile=profile, company=profile.company)
 
         account_data = {
             'navigate': "Account",
@@ -1013,9 +1038,9 @@ class HomeListView(
             'data': [],
         }
 
-        accounts = models.Account.objects.filter(
+        layout_accounts = models.Account.objects.filter(
             profile=profile).order_by('-last_updated')
-        for item in accounts:
+        for item in layout_accounts:
             new_item = {}
 
             new_item['id'] = item.id
@@ -1086,88 +1111,8 @@ class HomeListView(
             tag_data['data'].append(new_item)
         data.append(tag_data)
 
-        operation_data = {
-            'navigate': "Operation",
-            'title': "Последние операции",
-            'data': [],
-        }
-
-        actions = None
-
-        if profile.is_admin:
-            accounts = models.Account.objects\
-                .filter(company=profile.company)
-        else:
-            accounts = models.Account.objects\
-                .filter(profile=profile, company=profile.company)
-
-        actions = models.Action.objects.filter(account__in=accounts)
-        for item in actions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
-            new_item["style"] = "color-success-600"
-            new_item['balance'] = item.action_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "action"
-            operation_data['data'].append(new_item)
-
-        transactions = models.Transaction.objects.filter(account__in=accounts)
-        for item in transactions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
-            new_item["style"] = "color-danger-600"
-            new_item['balance'] = item.transaction_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "transaction"
-            operation_data['data'].append(new_item)
-
-        transfers = []
-
-        transfers_list = [*models.Transfer.objects.filter(
-            from_account__in=accounts
-        ), *models.Transfer.objects.filter(
-            to_account__in=accounts
-        )]
-
-        transfers = [i for n, i in enumerate(
-            transfers_list) if i not in transfers_list[n + 1:]]
-
-        for item in transfers:
-            new_item = {}
-            new_item['id'] = item.id
-            new_item['name'] = item.from_account.profile.first_name[:1] + \
-                ". " + item.from_account.profile.last_name + \
-                " => " + \
-                item.to_account.profile.first_name[:1] + \
-                ". " + item.to_account.profile.last_name
-            new_item['balance'] = item.transfer_amount
-            new_item['last_updated'] = item.last_updated
-            new_item["from_account"] = \
-                f"{item.from_account.account_name} (pk={item.from_account.id})"
-            new_item["to_account"] = \
-                f"{item.to_account.account_name} (pk={item.to_account.id})"
-            new_item['type'] = "transfer"
-            operation_data['data'].append(new_item)
-
-        operation_data['data'].sort(
-            key=itemgetter('last_updated'), reverse=True)
-        data.append(operation_data)
-
         home_data = {
-            "balance": models.Account.objects.filter(
-                profile=profile).aggregate(Sum('balance'))['balance__sum'],
-            "action_balance": actions.aggregate(
-                Sum('action_amount')
-            )['action_amount__sum'],
-            "transaction_balance": transactions.aggregate(
-                Sum('transaction_amount')
-            )['transaction_amount__sum'],
+            "balance": accounts.aggregate(Sum('balance'))['balance__sum'],
             "data": data
         }
 

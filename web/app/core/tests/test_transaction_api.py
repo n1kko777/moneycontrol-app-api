@@ -4,68 +4,12 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Transaction, Profile, Company, Account, Category, Tag
+from core.models import Transaction, Category, Tag
 from core.serializers import TransactionSerializer
-
-from faker import Faker
-import random
-
-
-fake = Faker()
-
-ACCOUNT_URL = '/api/v1/account/'
-PROFILE_URL = '/api/v1/profile/'
-COMPANY_URL = '/api/v1/company/'
-
-TRANSACTION_URL = '/api/v1/transaction/'
-
-
-def phn():
-    n = '0000000000'
-    while '9' in n[3:6] or n[3:6] == '000' or n[6] == n[7] == n[8] == n[9]:
-        n = str(random.randint(10**9, 10**10-1))
-    return n
-
-
-def sample_profile(user, **params):
-    """Create and return a sample profile"""
-    defaults = {
-        "first_name": fake.name().split(' ')[0],
-        "last_name": fake.name().split(' ')[1],
-        "phone": f'{phn()}',
-        "image": None
-    }
-    defaults.update(params)
-
-    return Profile.objects.create(user=user, **defaults)
-
-
-def sample_company(self):
-    """Create and return a sample company"""
-    payload = {
-        "company_name": fake.name()
-    }
-
-    res = self.client.post(COMPANY_URL, payload)
-
-    return Company.objects.get(id=res.data['id'])
-
-
-def sample_account(self, profile, company, **params):
-    """Create and return a sample customer"""
-    defaults = {
-        "balance": 0,
-        "account_name": "string",
-        "account_color": "string"
-    }
-
-    defaults.update(params)
-
-    return Account.objects.create(
-        profile=profile,
-        company=company,
-        **defaults
-    )
+from .helper import sample_profile, \
+    sample_company, \
+    sample_account, \
+    TRANSACTION_URL
 
 
 class PublicCoreApiTest(TestCase):

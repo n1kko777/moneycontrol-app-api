@@ -39,3 +39,4 @@ jobs:
             git fetch && git pull origin master
             make down_prod
             make up_prod
+            docker image prune --force

@@ -3,70 +3,14 @@ from django.test import TestCase
 
 from rest_framework import status
 from rest_framework.test import APIClient
-
-from core.models import Profile, Company, Category, Account
-
-from faker import Faker
-import random
-
-
-fake = Faker()
-
-ACCOUNT_URL = '/api/v1/account/'
-PROFILE_URL = '/api/v1/profile/'
-COMPANY_URL = '/api/v1/company/'
-
-ACTION_URL = '/api/v1/action/'
-
-HOMELIST_URL = '/api/v1/home-list/'
-
-
-def phn():
-    n = '0000000000'
-    while '9' in n[3:6] or n[3:6] == '000' or n[6] == n[7] == n[8] == n[9]:
-        n = str(random.randint(10**9, 10**10-1))
-    return n
-
-
-def sample_profile(user, **params):
-    """Create and return a sample profile"""
-    defaults = {
-        "first_name": fake.name().split(' ')[0],
-        "last_name": fake.name().split(' ')[1],
-        "phone": f'{phn()}',
-        "image": None
-    }
-    defaults.update(params)
-
-    return Profile.objects.create(user=user, **defaults)
-
-
-def sample_company(self):
-    """Create and return a sample company"""
-    payload = {
-        "company_name": fake.name()
-    }
-
-    res = self.client.post(COMPANY_URL, payload)
-
-    return Company.objects.get(id=res.data['id'])
-
-
-def sample_account(self, profile, company, **params):
-    """Create and return a sample customer"""
-    defaults = {
-        "balance": 0,
-        "account_name": "string",
-        "account_color": "string"
-    }
-
-    defaults.update(params)
-
-    return Account.objects.create(
-        profile=profile,
-        company=company,
-        **defaults
-    )
+from core.models import Category
+from .helper import sample_profile, \
+    sample_company, \
+    sample_account, \
+    fake, \
+    HOMELIST_URL, \
+    ACTION_URL, \
+    COMPANY_URL
 
 
 class PublicCoreApiTest(TestCase):
@@ -76,7 +20,7 @@ class PublicCoreApiTest(TestCase):
         self.client = APIClient()
 
     def test_home_list_auth_required(self):
-        res = self.client.get(HOMELIST_URL)
+        res = self.client.post(HOMELIST_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -114,7 +58,35 @@ class PrivateCustomerApiTests(TestCase):
         client2 = APIClient()
         client2.force_authenticate(user=user2)
 
-        res = client2.get(HOMELIST_URL)
+        res = client2.post(HOMELIST_URL)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_home_list_data_other_company(self):
+        user2 = get_user_model().objects.create_user(
+            email='other@gleb.com',
+            password='otherpass',
+            username='test_1'
+        )
+
+        client2 = APIClient()
+        client2.force_authenticate(user=user2)
+
+        profile2 = sample_profile(user=user2)
+
+        payload = {
+            "company_name": fake.name()
+        }
+
+        client2.post(COMPANY_URL, payload)
+
+        res = client2.post(HOMELIST_URL, {
+            "profile_id": self.profile.id
+        })
+
+        profile2.refresh_from_db()
+        self.profile.refresh_from_db()
+
+        self.assertFalse(profile2.company.id == self.profile.company.id)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_home_list_data(self):
@@ -147,7 +119,10 @@ class PrivateCustomerApiTests(TestCase):
 
         client2.post(ACTION_URL, payload)
 
-        res = self.client.get(HOMELIST_URL)
+        res = self.client.post(HOMELIST_URL)
+        self.account.refresh_from_db()
+        account2.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data['balance'], 1000)
+        self.assertEqual(res.data['balance'],
+                         self.account.balance + account2.balance)
