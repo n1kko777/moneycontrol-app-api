@@ -13,6 +13,7 @@ from rest_framework.generics import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Sum
+from operator import itemgetter
 
 
 import decimal
@@ -1110,6 +1111,81 @@ class HomeListView(
             new_item['type'] = "tag"
             tag_data['data'].append(new_item)
         data.append(tag_data)
+
+        operation_data = {
+            'navigate': "Operation",
+            'title': "Последние операции",
+            'data': [],
+        }
+
+        actions = None
+
+        if profile.is_admin:
+            accounts = models.Account.objects\
+                .filter(company=profile.company)
+        else:
+            accounts = models.Account.objects\
+                .filter(profile=profile, company=profile.company)
+
+        actions = models.Action.objects.filter(account__in=accounts)
+        for item in actions:
+            new_item = {}
+
+            new_item['id'] = item.id
+            new_item['name'] = item.account.profile.first_name[:1] + \
+                ". " + item.account.profile.last_name
+            new_item["style"] = "color-success-600"
+            new_item['balance'] = item.action_amount
+            new_item['last_updated'] = item.last_updated
+            new_item['type'] = "action"
+            operation_data['data'].append(new_item)
+
+        transactions = models.Transaction.objects.filter(account__in=accounts)
+        for item in transactions:
+            new_item = {}
+
+            new_item['id'] = item.id
+            new_item['name'] = item.account.profile.first_name[:1] + \
+                ". " + item.account.profile.last_name
+            new_item["style"] = "color-danger-600"
+            new_item['balance'] = item.transaction_amount
+            new_item['last_updated'] = item.last_updated
+            new_item['type'] = "transaction"
+            operation_data['data'].append(new_item)
+
+        transfers = []
+
+        transfers_list = [*models.Transfer.objects.filter(
+            from_account__in=accounts
+        ), *models.Transfer.objects.filter(
+            to_account__in=accounts
+        )]
+
+        transfers = [i for n, i in enumerate(
+            transfers_list) if i not in transfers_list[n + 1:]]
+
+        for item in transfers:
+            new_item = {}
+            new_item['id'] = item.id
+            new_item['name'] = item.from_account.profile.first_name[:1] + \
+                ". " + item.from_account.profile.last_name + \
+                " => " + \
+                item.to_account.profile.first_name[:1] + \
+                ". " + item.to_account.profile.last_name
+            new_item['balance'] = item.transfer_amount
+            new_item['last_updated'] = item.last_updated
+            new_item["from_account"] = \
+                f"{item.from_account.account_name} (pk={item.from_account.id})"
+            new_item["to_account"] = \
+                f"{item.to_account.account_name} (pk={item.to_account.id})"
+            new_item['type'] = "transfer"
+            operation_data['data'].append(new_item)
+
+        operation_data['data'].sort(
+            key=itemgetter('last_updated'), reverse=True)
+        operation_data['data'] = operation_data['data'][:10]
+
+        data.append(operation_data)
 
         home_data = {
             "balance": accounts.aggregate(Sum('balance'))['balance__sum'],
