@@ -109,23 +109,10 @@ class PrivateCustomerApiTests(TestCase):
 
         self.account.balance = 1000
         self.account.save()
-        balance_before = self.account.balance
 
         res = self.client.post(ACTION_URL, payload)
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-        self.account.refresh_from_db()
-
-        balance_after = self.account.balance
-
-        self.assertEqual(payload['action_amount'],
-                         balance_after - balance_before)
-
-        action = Action.objects.get(id=res.data['id'])
-
-        self.assertEqual(payload['account'], action.account.id)
-        self.assertEqual(payload['action_amount'], action.action_amount)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_admin_can_access_action_other_team_member(self):
         user2 = get_user_model().objects.create_user(

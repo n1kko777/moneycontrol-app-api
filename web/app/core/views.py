@@ -341,6 +341,10 @@ class ActionViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        if float(self.request.data['action_amount']) < 0:
+            content = {"detail": 'Сумма операции должна быть положительной'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             profile = models.Profile.objects.get(user=self.request.user)
             models.Account.objects.get(
@@ -409,6 +413,10 @@ class TransferViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if float(self.request.data['transfer_amount']) < 0:
+            content = {"detail": 'Сумма операции должна быть положительной'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             profile = models.Profile.objects\
@@ -524,6 +532,10 @@ class TransactionViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if float(self.request.data['transaction_amount']) < 0:
+            content = {"detail": 'Сумма операции должна быть положительной'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
         profile = models.Profile.objects\
             .all().filter(user=self.request.user)[0]

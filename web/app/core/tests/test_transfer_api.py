@@ -106,6 +106,20 @@ class PrivateCustomerApiTests(TestCase):
         self.assertEqual(payload['transfer_amount'],
                          transfer.transfer_amount)
 
+    def test_make_withdraw(self):
+        """ Transfer from self account to another self account """
+
+        payload = {
+            "from_account": self.account1.id,
+            "to_account": self.account2.id,
+            "transfer_amount": -10,
+            "company": self.company.id
+        }
+
+        res = self.client.post(TRANSFER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_make_transfer_same_self(self):
         """ Transfer from self account to same self account """
 
