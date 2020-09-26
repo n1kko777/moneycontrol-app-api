@@ -3,13 +3,13 @@ from django.test import TestCase
 
 from rest_framework import status
 from rest_framework.test import APIClient
-from core.models import Category
+from core.models import Category, Transaction
 from .helper import sample_profile, \
     sample_company, \
     sample_account, \
     fake, \
-    HOMELIST_URL, \
-    ACTION_URL, \
+    OPERATION_URL, \
+    TRANSACTION_URL, \
     COMPANY_URL
 
 
@@ -19,8 +19,8 @@ class PublicCoreApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_home_list_auth_required(self):
-        res = self.client.post(HOMELIST_URL)
+    def test_operation_list_auth_required(self):
+        res = self.client.post(OPERATION_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -48,7 +48,7 @@ class PrivateCustomerApiTests(TestCase):
         self.account.balance = 1000
         self.account.save()
 
-    def test_get_home_list_data_no_company(self):
+    def test_get_operation_list_data_no_company(self):
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
             password='otherpass',
@@ -58,10 +58,10 @@ class PrivateCustomerApiTests(TestCase):
         client2 = APIClient()
         client2.force_authenticate(user=user2)
 
-        res = client2.post(HOMELIST_URL)
+        res = client2.post(OPERATION_URL)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_get_home_list_data_other_company(self):
+    def test_get_operation_list_data_other_company(self):
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
             password='otherpass',
@@ -79,7 +79,7 @@ class PrivateCustomerApiTests(TestCase):
 
         client2.post(COMPANY_URL, payload)
 
-        res = client2.post(HOMELIST_URL, {
+        res = client2.post(OPERATION_URL, {
             "profile_id": self.profile.id
         })
 
@@ -89,7 +89,7 @@ class PrivateCustomerApiTests(TestCase):
         self.assertFalse(profile2.company.id == self.profile.company.id)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_get_home_list_admin_access(self):
+    def test_get_operation_list_admin_access(self):
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
             password='otherpass',
@@ -114,13 +114,13 @@ class PrivateCustomerApiTests(TestCase):
         self.profile.refresh_from_db()
         profile2.refresh_from_db()
 
-        res = self.client.post(HOMELIST_URL, {
+        res = self.client.post(OPERATION_URL, {
             "profile_id": profile2.id,
         })
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_get_home_list_data(self):
+    def test_get_operation_list_data(self):
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
             password='otherpass',
@@ -141,19 +141,22 @@ class PrivateCustomerApiTests(TestCase):
         client2 = APIClient()
         client2.force_authenticate(user=user2)
 
-        payload = {
+        trans_req = client2.post(TRANSACTION_URL, {
+            "transaction_amount": 100,
             "account": account2.id,
-            "action_amount": 100,
             "company": self.company.id,
             "category": self.category.id
-        }
+        })
 
-        client2.post(ACTION_URL, payload)
+        self.assertEqual(trans_req.status_code, status.HTTP_201_CREATED)
 
-        res = self.client.post(HOMELIST_URL)
+        trans = Transaction.objects.get(id=trans_req.data['id'])
+
+        res = self.client.post(OPERATION_URL)
         self.account.refresh_from_db()
         account2.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data['balance'],
-                         self.account.balance + account2.balance)
+        self.assertEqual(trans.last_updated.strftime(
+            '%d.%m.%Y'), res.data[0]['title'])
+        self.assertEqual(trans.id, res.data[0]['data'][0]['id'])
