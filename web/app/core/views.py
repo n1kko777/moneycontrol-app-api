@@ -1014,12 +1014,22 @@ class HomeListView(
                 id=self.request.data['profile_id']
             )
 
+            user_profile = models.Profile.objects.get(
+                user=self.request.user
+            )
+
             if req_profile.company != models.Profile.objects.get(
                 user=self.request.user
             ).company:
                 return Response({
                     "detail":
                     "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not user_profile.is_admin:
+                return Response({
+                    "detail":
+                    "Невозможно получить данные пользователя."
                 }, status=status.HTTP_400_BAD_REQUEST)
         else:
             req_profile = models.Profile.objects.get(
@@ -1223,12 +1233,22 @@ class OperationListView(
                 id=self.request.data['profile_id']
             )
 
+            user_profile = models.Profile.objects.get(
+                user=self.request.user
+            )
+
             if req_profile.company != models.Profile.objects.get(
                 user=self.request.user
             ).company:
                 return Response({
                     "detail":
                     "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not user_profile.is_admin:
+                return Response({
+                    "detail":
+                    "Невозможно получить данные пользователя."
                 }, status=status.HTTP_400_BAD_REQUEST)
         else:
             req_profile = models.Profile.objects.get(
