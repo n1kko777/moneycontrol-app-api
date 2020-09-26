@@ -20,6 +20,7 @@ JOIN_COMPANY_URL = '/api/v1/join-profile-to-company/'
 REMOVE_COMPANY_URL = '/api/v1/remove-profile-from-company/'
 
 HOMELIST_URL = '/api/v1/home-list/'
+OPERATION_URL = '/api/v1/operation-list/'
 
 
 def phn():

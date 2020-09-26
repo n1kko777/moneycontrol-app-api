@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Sum
 from operator import itemgetter
-
+from collections import defaultdict
 
 import decimal
 
@@ -1205,3 +1205,128 @@ class HomeListView(
         }
 
         return Response(home_data, status=status.HTTP_200_OK)
+
+
+class OperationListView(
+    ServiceExceptionHandlerMixin,
+    APIView
+):
+    """ Custom View to get home list data """
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request, format=None):
+        req_profile = None
+
+        if request.data.get("profile_id"):
+            req_profile = models.Profile.objects.get(
+                id=self.request.data['profile_id']
+            )
+
+            if req_profile.company != models.Profile.objects.get(
+                user=self.request.user
+            ).company:
+                return Response({
+                    "detail":
+                    "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            req_profile = models.Profile.objects.get(
+                user=self.request.user
+            )
+
+        if req_profile.company is None:
+            return Response({
+                "detail": "Сначала необходимо создать " +
+                "компанию или присоединиться к ней."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        data = []
+
+        profile = req_profile
+
+        operation_data = []
+
+        actions = None
+
+        if profile.is_admin:
+            accounts = models.Account.objects\
+                .filter(company=profile.company)
+        else:
+            accounts = models.Account.objects\
+                .filter(profile=profile, company=profile.company)
+
+        actions = models.Action.objects.filter(account__in=accounts)
+        for item in actions:
+            new_item = {}
+
+            new_item['id'] = item.id
+            new_item['name'] = item.account.profile.first_name[:1] + \
+                ". " + item.account.profile.last_name
+            new_item["style"] = "color-success-600"
+            new_item['balance'] = item.action_amount
+            new_item['last_updated'] = item.last_updated
+            new_item['tags'] = [int(var.id) for var in item.tags.all()]
+            new_item['type'] = "action"
+            operation_data.append(new_item)
+
+        transactions = models.Transaction.objects.filter(account__in=accounts)
+        for item in transactions:
+            new_item = {}
+
+            new_item['id'] = item.id
+            new_item['name'] = item.account.profile.first_name[:1] + \
+                ". " + item.account.profile.last_name
+            new_item["style"] = "color-danger-600"
+            new_item['balance'] = item.transaction_amount
+            new_item['last_updated'] = item.last_updated
+            new_item['tags'] = [int(var.id) for var in item.tags.all()]
+            new_item['type'] = "transaction"
+            operation_data.append(new_item)
+
+        transfers = []
+
+        transfers_list = [*models.Transfer.objects.filter(
+            from_account__in=accounts
+        ), *models.Transfer.objects.filter(
+            to_account__in=accounts
+        )]
+
+        transfers = [i for n, i in enumerate(
+            transfers_list) if i not in transfers_list[n + 1:]]
+
+        for item in transfers:
+            new_item = {}
+            new_item['id'] = item.id
+            new_item['name'] = item.from_account.profile.first_name[:1] + \
+                ". " + item.from_account.profile.last_name + \
+                " => " + \
+                item.to_account.profile.first_name[:1] + \
+                ". " + item.to_account.profile.last_name
+            new_item['balance'] = item.transfer_amount
+            new_item['last_updated'] = item.last_updated
+            new_item["from_account"] = \
+                f"{item.from_account.account_name} (pk={item.from_account.id})"
+            new_item["to_account"] = \
+                f"{item.to_account.account_name} (pk={item.to_account.id})"
+            new_item['type'] = "transfer"
+            operation_data.append(new_item)
+
+        operation_data.sort(
+            key=itemgetter('last_updated'),
+            reverse=True
+        )
+
+        groups = defaultdict(list)
+
+        for obj in operation_data:
+            groups[obj['last_updated'].strftime('%d.%m.%Y')].append(obj)
+
+        new_list = groups.values()
+
+        data = [{
+            "title": var[0]['last_updated'].strftime('%d.%m.%Y'),
+            "data": var
+        } for var in new_list]
+
+        return Response(data, status=status.HTTP_200_OK)
