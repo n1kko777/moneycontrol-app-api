@@ -1154,8 +1154,12 @@ class HomeListView(
             new_item = {}
 
             new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.account.profile.first_name[:1] + \
+                    ". " + item.account.profile.last_name + \
+                    " (" + item.account.account_name + ")"
+            else:
+                new_item['name'] = item.account.account_name
             new_item["style"] = "color-success-600"
             new_item['balance'] = item.action_amount
             new_item['last_updated'] = item.last_updated
@@ -1167,8 +1171,12 @@ class HomeListView(
             new_item = {}
 
             new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.account.profile.first_name[:1] + \
+                    ". " + item.account.profile.last_name + \
+                    " (" + item.account.account_name + ")"
+            else:
+                new_item['name'] = item.account.account_name
             new_item["style"] = "color-danger-600"
             new_item['balance'] = item.transaction_amount
             new_item['last_updated'] = item.last_updated
@@ -1189,11 +1197,18 @@ class HomeListView(
         for item in transfers:
             new_item = {}
             new_item['id'] = item.id
-            new_item['name'] = item.from_account.profile.first_name[:1] + \
-                ". " + item.from_account.profile.last_name + \
-                " => " + \
-                item.to_account.profile.first_name[:1] + \
-                ". " + item.to_account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.from_account.profile.first_name[:1] + \
+                    ". " + item.from_account.profile.last_name + \
+                    " (" + item.from_account.account_name + ") " + \
+                    "=>" + \
+                    item.to_account.profile.first_name[:1] + \
+                    ". " + item.to_account.profile.last_name + \
+                    " (" + item.to_account.account_name + ") "
+            else:
+                new_item['name'] = item.from_account.account_name + \
+                    " => " + \
+                    item.to_account.account_name
             new_item['balance'] = item.transfer_amount
             new_item['last_updated'] = item.last_updated
             new_item["from_account"] = \
@@ -1281,8 +1296,12 @@ class OperationListView(
             new_item = {}
 
             new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.account.profile.first_name[:1] + \
+                    ". " + item.account.profile.last_name + \
+                    " (" + item.account.account_name + ")"
+            else:
+                new_item['name'] = item.account.account_name
             new_item["style"] = "color-success-600"
             new_item['balance'] = item.action_amount
             new_item['last_updated'] = item.last_updated
@@ -1296,8 +1315,12 @@ class OperationListView(
             new_item = {}
 
             new_item['id'] = item.id
-            new_item['name'] = item.account.profile.first_name[:1] + \
-                ". " + item.account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.account.profile.first_name[:1] + \
+                    ". " + item.account.profile.last_name + \
+                    " (" + item.account.account_name + ")"
+            else:
+                new_item['name'] = item.account.account_name
             new_item["style"] = "color-danger-600"
             new_item['balance'] = item.transaction_amount
             new_item['last_updated'] = item.last_updated
@@ -1320,11 +1343,18 @@ class OperationListView(
         for item in transfers:
             new_item = {}
             new_item['id'] = item.id
-            new_item['name'] = item.from_account.profile.first_name[:1] + \
-                ". " + item.from_account.profile.last_name + \
-                " => " + \
-                item.to_account.profile.first_name[:1] + \
-                ". " + item.to_account.profile.last_name
+            if req_profile.company.profiles.count() > 1:
+                new_item['name'] = item.from_account.profile.first_name[:1] + \
+                    ". " + item.from_account.profile.last_name + \
+                    " (" + item.from_account.account_name + ") " + \
+                    "=>" + \
+                    item.to_account.profile.first_name[:1] + \
+                    ". " + item.to_account.profile.last_name + \
+                    " (" + item.to_account.account_name + ") "
+            else:
+                new_item['name'] = item.from_account.account_name + \
+                    " => " + \
+                    item.to_account.account_name
             new_item['balance'] = item.transfer_amount
             new_item['last_updated'] = item.last_updated
             new_item["from_account"] = \
