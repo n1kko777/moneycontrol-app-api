@@ -1286,6 +1286,7 @@ class OperationListView(
             new_item["style"] = "color-success-600"
             new_item['balance'] = item.action_amount
             new_item['last_updated'] = item.last_updated
+            new_item['category'] = item.category.id
             new_item['tags'] = [int(var.id) for var in item.tags.all()]
             new_item['type'] = "action"
             operation_data.append(new_item)
@@ -1300,6 +1301,7 @@ class OperationListView(
             new_item["style"] = "color-danger-600"
             new_item['balance'] = item.transaction_amount
             new_item['last_updated'] = item.last_updated
+            new_item['category'] = item.category.id
             new_item['tags'] = [int(var.id) for var in item.tags.all()]
             new_item['type'] = "transaction"
             operation_data.append(new_item)
@@ -1349,4 +1351,14 @@ class OperationListView(
             "data": var
         } for var in new_list]
 
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({
+            "total_action": actions.
+            aggregate(
+                Sum('action_amount')
+            )['action_amount__sum'],
+            "total_transaction": transactions.
+            aggregate(
+                Sum('transaction_amount')
+            )['transaction_amount__sum'],
+            "data": data
+        }, status=status.HTTP_200_OK)

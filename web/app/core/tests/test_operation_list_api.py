@@ -157,6 +157,7 @@ class PrivateCustomerApiTests(TestCase):
         account2.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(res.data['data']) > 0)
         self.assertEqual(trans.last_updated.strftime(
-            '%d.%m.%Y'), res.data[0]['title'])
-        self.assertEqual(trans.id, res.data[0]['data'][0]['id'])
+            '%d.%m.%Y'), res.data['data'][0]['title'])
+        self.assertEqual(trans.id, res.data['data'][0]['data'][0]['id'])
