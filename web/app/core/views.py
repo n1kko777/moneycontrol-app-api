@@ -1302,6 +1302,7 @@ class OperationListView(
                     " (" + item.account.account_name + ")"
             else:
                 new_item['name'] = item.account.account_name
+            new_item['account'] = item.account.id
             new_item["style"] = "color-success-600"
             new_item['balance'] = item.action_amount
             new_item['last_updated'] = item.last_updated
@@ -1321,6 +1322,7 @@ class OperationListView(
                     " (" + item.account.account_name + ")"
             else:
                 new_item['name'] = item.account.account_name
+            new_item['account'] = item.account.id
             new_item["style"] = "color-danger-600"
             new_item['balance'] = item.transaction_amount
             new_item['last_updated'] = item.last_updated
@@ -1359,8 +1361,10 @@ class OperationListView(
             new_item['last_updated'] = item.last_updated
             new_item["from_account"] = \
                 f"{item.from_account.account_name} (pk={item.from_account.id})"
+            new_item["from_account_id"] = item.from_account.id
             new_item["to_account"] = \
                 f"{item.to_account.account_name} (pk={item.to_account.id})"
+            new_item["to_account_id"] = item.to_account.id
             new_item['type'] = "transfer"
             operation_data.append(new_item)
 
