@@ -1,6 +1,6 @@
+import datetime
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-
 from rest_framework import status
 from rest_framework.test import APIClient
 from core.models import Category, Transaction
@@ -120,6 +120,35 @@ class PrivateCustomerApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_get_operation_list_no_date(self):
+        user2 = get_user_model().objects.create_user(
+            email='other@gleb.com',
+            password='otherpass',
+            username='test_1'
+        )
+
+        client2 = APIClient()
+        client2.force_authenticate(user=user2)
+
+        profile2 = sample_profile(user=user2)
+
+        payload = {
+            "company_name": fake.name()
+        }
+
+        client2.post(COMPANY_URL, payload)
+
+        client2.post('/api/v1/join-profile-to-company/', {
+            'profile_id': self.profile.id,
+            'profile_phone': self.profile.phone
+        }, format="json")
+        self.profile.refresh_from_db()
+        profile2.refresh_from_db()
+
+        res = self.client.post(OPERATION_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_get_operation_list_data(self):
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
@@ -152,7 +181,14 @@ class PrivateCustomerApiTests(TestCase):
 
         trans = Transaction.objects.get(id=trans_req.data['id'])
 
-        res = self.client.post(OPERATION_URL)
+        today = datetime.datetime.utcnow()
+        yesterday = today - datetime.timedelta(days=1)
+        tomorrow = today + datetime.timedelta(days=1)
+
+        res = self.client.post(OPERATION_URL, {
+            'start_date': yesterday,
+            'end_date': tomorrow,
+        })
         self.account.refresh_from_db()
         account2.refresh_from_db()
 

@@ -1,4 +1,5 @@
 from django.db import transaction
+from dateutil.parser import parse
 
 
 def make_transfer(from_account, to_account, transfer_amount, **args):
@@ -20,3 +21,18 @@ def make_transfer(from_account, to_account, transfer_amount, **args):
         to_balance = to_account.balance + transfer_amount
         to_account.balance = to_balance
         to_account.save()
+
+
+def is_date(string, fuzzy=False):
+    """
+    Return whether the string can be interpreted as a date.
+
+    :param string: str, string to check for date
+    :param fuzzy: bool, ignore unknown tokens in string if True
+    """
+    try:
+        parse(string, fuzzy=fuzzy)
+        return True
+
+    except ValueError:
+        return False

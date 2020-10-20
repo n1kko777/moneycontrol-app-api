@@ -1,5 +1,5 @@
 from . import serializers, models
-from .services import make_transfer
+from .services import make_transfer, is_date
 
 from rest_framework import viewsets, status, mixins
 from rest_framework.authentication import TokenAuthentication
@@ -17,6 +17,8 @@ from operator import itemgetter
 from collections import defaultdict
 
 import decimal
+from dateutil import parser
+from django.utils.timezone import make_aware
 
 User = get_user_model()
 
@@ -1276,6 +1278,28 @@ class OperationListView(
                 "компанию или присоединиться к ней."
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        if (
+            'start_date' not in self.request.data or
+            'end_date' not in self.request.data
+        ):
+            return Response({
+                "detail": "Неверный диапазон дат"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        elif (
+            not is_date(self.request.data['start_date']) or
+            not is_date(self.request.data['end_date'])
+        ):
+            return Response({
+                "detail": "Неверный диапазон дат"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        start_date = self.request.data['start_date']
+        end_date = self.request.data['end_date']
+
+        from_datetime = make_aware(
+            parser.parse(start_date).replace(tzinfo=None))
+        to_datetime = make_aware(parser.parse(end_date).replace(tzinfo=None))
+
         data = []
 
         profile = req_profile
@@ -1291,7 +1315,17 @@ class OperationListView(
             accounts = models.Account.objects\
                 .filter(profile=profile, company=profile.company)
 
-        actions = models.Action.objects.filter(account__in=accounts)
+        try:
+            actions = models.Action.objects.filter(
+                account__in=accounts,
+                last_updated__range=[
+                    from_datetime,
+                    to_datetime
+                ]
+            )
+        except Exception as e:
+            print(f"action: {e}")
+
         for item in actions:
             new_item = {}
 
@@ -1311,7 +1345,18 @@ class OperationListView(
             new_item['type'] = "action"
             operation_data.append(new_item)
 
-        transactions = models.Transaction.objects.filter(account__in=accounts)
+        try:
+            transactions = models.Transaction.objects.filter(
+                account__in=accounts,
+                last_updated__range=[
+                    from_datetime,
+                    to_datetime
+                ]
+            )
+
+        except Exception as e:
+            print(f"transactions: {e}")
+
         for item in transactions:
             new_item = {}
 
@@ -1333,11 +1378,25 @@ class OperationListView(
 
         transfers = []
 
-        transfers_list = [*models.Transfer.objects.filter(
-            from_account__in=accounts
-        ), *models.Transfer.objects.filter(
-            to_account__in=accounts
-        )]
+        try:
+            transfers_list = [
+                *models.Transfer.objects.filter(
+                    from_account__in=accounts,
+                    last_updated__range=[
+                        from_datetime,
+                        to_datetime
+                    ]
+                ),
+                *models.Transfer.objects.filter(
+                    to_account__in=accounts,
+                    last_updated__range=[
+                        from_datetime,
+                        to_datetime
+                    ]
+                )
+            ]
+        except Exception as e:
+            print(f"transfers: {e}")
 
         transfers = [i for n, i in enumerate(
             transfers_list) if i not in transfers_list[n + 1:]]
