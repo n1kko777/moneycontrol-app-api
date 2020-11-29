@@ -1441,6 +1441,16 @@ class OperationListView(
 
         data = [{
             "title": var[0]['last_updated'].strftime('%d.%m.%Y'),
+            "total_day_action": actions
+                .filter(last_updated=var[0]['last_updated'])
+                .aggregate(
+                Sum('action_amount')
+            )['action_amount__sum'],
+            "total_day_transaction": transactions
+            .filter(last_updated=var[0]['last_updated'])
+            .aggregate(
+                Sum('transaction_amount')
+            )['transaction_amount__sum'],
             "data": var
         } for var in new_list]
 
