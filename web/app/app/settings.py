@@ -36,12 +36,22 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'rest_framework_swagger',
 
+    'dbbackup',
+    'storages',
+
+
     # Local
     'users.apps.UsersConfig',
     'core',
 
     'django_extensions',
 ]
+
+DBBACKUP_STORAGE = 'storages.backends.dropbox.DropBoxStorage'
+DBBACKUP_STORAGE_OPTIONS = {
+    'oauth2_access_token': os.environ.get('DROPBOX_API_TOKEN', 'my_token'),
+    'root_path': 'mncntrl',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
