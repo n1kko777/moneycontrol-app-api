@@ -20,7 +20,7 @@ class PublicCoreApiTest(TestCase):
         self.client = APIClient()
 
     def test_home_list_auth_required(self):
-        res = self.client.post(HOMELIST_URL)
+        res = self.client.get(HOMELIST_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -58,7 +58,7 @@ class PrivateCustomerApiTests(TestCase):
         client2 = APIClient()
         client2.force_authenticate(user=user2)
 
-        res = client2.post(HOMELIST_URL)
+        res = client2.get(HOMELIST_URL)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_home_list_data_other_company(self):
@@ -79,9 +79,7 @@ class PrivateCustomerApiTests(TestCase):
 
         client2.post(COMPANY_URL, payload)
 
-        res = client2.post(HOMELIST_URL, {
-            "profile_id": self.profile.id
-        })
+        res = client2.get(f'{HOMELIST_URL}?profile_id={self.profile.id}')
 
         profile2.refresh_from_db()
         self.profile.refresh_from_db()
@@ -114,9 +112,7 @@ class PrivateCustomerApiTests(TestCase):
         self.profile.refresh_from_db()
         profile2.refresh_from_db()
 
-        res = self.client.post(HOMELIST_URL, {
-            "profile_id": profile2.id,
-        })
+        res = self.client.get(f"{HOMELIST_URL}?profile_id={profile2.id}")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -150,7 +146,7 @@ class PrivateCustomerApiTests(TestCase):
 
         client2.post(ACTION_URL, payload)
 
-        res = self.client.post(HOMELIST_URL)
+        res = self.client.get(HOMELIST_URL)
         self.account.refresh_from_db()
         account2.refresh_from_db()
 
