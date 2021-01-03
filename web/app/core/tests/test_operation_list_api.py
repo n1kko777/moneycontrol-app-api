@@ -20,7 +20,7 @@ class PublicCoreApiTest(TestCase):
         self.client = APIClient()
 
     def test_operation_list_auth_required(self):
-        res = self.client.post(OPERATION_URL)
+        res = self.client.get(OPERATION_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -58,7 +58,7 @@ class PrivateCustomerApiTests(TestCase):
         client2 = APIClient()
         client2.force_authenticate(user=user2)
 
-        res = client2.post(OPERATION_URL)
+        res = client2.get(OPERATION_URL)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_operation_list_data_other_company(self):
@@ -79,9 +79,7 @@ class PrivateCustomerApiTests(TestCase):
 
         client2.post(COMPANY_URL, payload)
 
-        res = client2.post(OPERATION_URL, {
-            "profile_id": self.profile.id
-        })
+        res = client2.get(f"{OPERATION_URL}?profile_id={self.profile.id}")
 
         profile2.refresh_from_db()
         self.profile.refresh_from_db()
@@ -114,9 +112,7 @@ class PrivateCustomerApiTests(TestCase):
         self.profile.refresh_from_db()
         profile2.refresh_from_db()
 
-        res = self.client.post(OPERATION_URL, {
-            "profile_id": profile2.id,
-        })
+        res = self.client.get(f"{OPERATION_URL}?profile_id={profile2.id}")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -145,7 +141,7 @@ class PrivateCustomerApiTests(TestCase):
         self.profile.refresh_from_db()
         profile2.refresh_from_db()
 
-        res = self.client.post(OPERATION_URL)
+        res = self.client.get(OPERATION_URL)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -185,10 +181,9 @@ class PrivateCustomerApiTests(TestCase):
         yesterday = today - datetime.timedelta(days=1)
         tomorrow = today + datetime.timedelta(days=1)
 
-        res = self.client.post(OPERATION_URL, {
-            'start_date': yesterday,
-            'end_date': tomorrow,
-        })
+        res = self.client.get(
+            f'{OPERATION_URL}?start_date={yesterday}&end_date={tomorrow}'
+        )
         self.account.refresh_from_db()
         account2.refresh_from_db()
 

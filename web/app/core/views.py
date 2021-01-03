@@ -1,24 +1,27 @@
-from . import serializers, models
-from .services import make_transfer, is_date
+from django.contrib.auth import get_user_model
+from django.utils.timezone import make_aware
+from django.core.mail import send_mail
+from django.db.models import Sum
 
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, schemas
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .mixins import ServiceExceptionHandlerMixin
 from rest_framework.generics import get_object_or_404
 
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.db.models import Sum
 from operator import itemgetter
 from collections import defaultdict
 
-import decimal
 from dateutil import parser
-from django.utils.timezone import make_aware
+
+import decimal
+import coreapi
+
+from .services import make_transfer, is_date
+from .mixins import ServiceExceptionHandlerMixin
+from . import serializers, models
+
 
 User = get_user_model()
 
@@ -781,17 +784,23 @@ class TagViewSet(viewsets.ModelViewSet):
             )
 
 
-# Custom View to join profile to Company
-# – profile_id
-# - profile_phone
-
-
 class JoinProfileToCompany(
     ServiceExceptionHandlerMixin,
     APIView
 ):
+    """ Custom View to join profile to Company """
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    schema = schemas.AutoSchema(manual_fields=[
+        coreapi.Field(
+            "data",
+            required=True,
+            location="body",
+            description='{"profile_phone":"string", "profile_id":"string"}',
+        ),
+    ])
 
     def post(self, request):
         profile = get_object_or_404(
@@ -886,17 +895,23 @@ class JoinProfileToCompany(
             )
 
 
-# Custom View to remove profile from Company
-# – profile_id
-# - profile_phone
-
-
 class RemoveProfileFromCompany(
     ServiceExceptionHandlerMixin,
     APIView
 ):
+    """ Custom View to remove profile from Company """
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    schema = schemas.AutoSchema(manual_fields=[
+        coreapi.Field(
+            "data",
+            required=True,
+            location="body",
+            description='{"profile_phone":"string", "profile_id":"string"}',
+        ),
+    ])
 
     def post(self, request):
         profile = get_object_or_404(
@@ -1000,6 +1015,23 @@ class RemoveProfileFromCompany(
             )
 
 
+class HomeListViewSchema(schemas.AutoSchema):
+
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+
+        if method.lower() in ['get', ]:
+            extra_fields = [
+                coreapi.Field(
+                    name='profile_id',
+                    location='query',
+                )
+            ]
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
 class HomeListView(
     ServiceExceptionHandlerMixin,
     APIView
@@ -1007,13 +1039,22 @@ class HomeListView(
     """ Custom View to get home list data """
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+    schema = HomeListViewSchema()
 
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         req_profile = None
 
-        if request.data.get("profile_id"):
+        if 'profile_id' in request.query_params:
+            if not models.Profile.objects.filter(
+                id=self.request.query_params['profile_id']
+            ).exists():
+                return Response({
+                    "detail":
+                    "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             req_profile = models.Profile.objects.get(
-                id=self.request.data['profile_id']
+                id=self.request.query_params['profile_id']
             )
 
             user_profile = models.Profile.objects.get(
@@ -1064,7 +1105,9 @@ class HomeListView(
         }
 
         layout_accounts = models.Account.objects.filter(
-            profile=profile).order_by('-last_updated')
+            profile=profile
+        ).order_by('-last_updated')[:5]
+
         for item in layout_accounts:
             new_item = {}
 
@@ -1084,7 +1127,8 @@ class HomeListView(
             }
 
             profiles = models.Company.objects.get(
-                id=profile.company.id).profiles.order_by('id')
+                id=profile.company.id
+            ).profiles.order_by('id')[:5]
 
             for item in profiles:
                 new_item = {}
@@ -1105,7 +1149,9 @@ class HomeListView(
         }
 
         categories = models.Category.objects.filter(
-            company=profile.company).order_by('-last_updated')
+            company=profile.company
+        ).order_by('-last_updated')[:5]
+
         for item in categories:
             new_item = {}
 
@@ -1124,7 +1170,9 @@ class HomeListView(
         }
 
         tags = models.Tag.objects.filter(
-            company=profile.company).order_by('-last_updated')
+            company=profile.company
+        ).order_by('-last_updated')[:5]
+
         for item in tags:
             new_item = {}
 
@@ -1142,16 +1190,8 @@ class HomeListView(
             'data': [],
         }
 
-        actions = None
-
-        if profile.is_admin:
-            accounts = models.Account.objects\
-                .filter(company=profile.company)
-        else:
-            accounts = models.Account.objects\
-                .filter(profile=profile, company=profile.company)
-
         actions = models.Action.objects.filter(account__in=accounts)
+
         for item in actions:
             new_item = {}
 
@@ -1234,6 +1274,33 @@ class HomeListView(
         return Response(home_data, status=status.HTTP_200_OK)
 
 
+class OperationListViewSchema(schemas.AutoSchema):
+
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+
+        if method.lower() in ['get', ]:
+            extra_fields = [
+                coreapi.Field(
+                    name='profile_id',
+                    location='query',
+                ),
+                coreapi.Field(
+                    'start_date',
+                    required=True,
+                    location='query',
+                ),
+                coreapi.Field(
+                    'end_date',
+                    required=True,
+                    location='query',
+                ),
+            ]
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
 class OperationListView(
     ServiceExceptionHandlerMixin,
     APIView
@@ -1242,12 +1309,22 @@ class OperationListView(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
-    def post(self, request, format=None):
+    schema = OperationListViewSchema()
+
+    def get(self, request, format=None):
         req_profile = None
 
-        if request.data.get("profile_id"):
+        if 'profile_id' in request.query_params:
+            if not models.Profile.objects.filter(
+                id=self.request.query_params['profile_id']
+            ).exists():
+                return Response({
+                    "detail":
+                    "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             req_profile = models.Profile.objects.get(
-                id=self.request.data['profile_id']
+                id=request.query_params['profile_id']
             )
 
             user_profile = models.Profile.objects.get(
@@ -1279,22 +1356,22 @@ class OperationListView(
             }, status=status.HTTP_400_BAD_REQUEST)
 
         if (
-            'start_date' not in self.request.data or
-            'end_date' not in self.request.data
+            'start_date' not in request.query_params or
+            'end_date' not in request.query_params
         ):
             return Response({
                 "detail": "Неверный диапазон дат"
             }, status=status.HTTP_400_BAD_REQUEST)
         elif (
-            not is_date(self.request.data['start_date']) or
-            not is_date(self.request.data['end_date'])
+            not is_date(request.query_params['start_date']) or
+            not is_date(request.query_params['end_date'])
         ):
             return Response({
                 "detail": "Неверный диапазон дат"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        start_date = self.request.data['start_date']
-        end_date = self.request.data['end_date']
+        start_date = request.query_params['start_date']
+        end_date = request.query_params['end_date']
 
         from_datetime = make_aware(
             parser.parse(start_date).replace(tzinfo=None))
@@ -1323,6 +1400,7 @@ class OperationListView(
                     to_datetime
                 ]
             )
+
         except Exception as e:
             print(f"action: {e}")
 
@@ -1395,6 +1473,7 @@ class OperationListView(
                     ]
                 )
             ]
+
         except Exception as e:
             print(f"transfers: {e}")
 
