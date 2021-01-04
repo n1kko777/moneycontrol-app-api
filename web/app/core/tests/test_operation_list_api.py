@@ -119,7 +119,15 @@ class PrivateCustomerApiTests(TestCase):
         self.profile.refresh_from_db()
         profile2.refresh_from_db()
 
-        res = self.client.get(f"{OPERATION_URL}?profile_id={profile2.id}")
+        profile2.refresh_from_db()
+
+        sample_account(
+            self=self,
+            profile=profile2,
+            company=profile2.company
+        )
+
+        res = client2.get(f"{OPERATION_URL}?account={self.account.id}")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
