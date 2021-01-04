@@ -17,6 +17,7 @@ from dateutil import parser
 
 import decimal
 import coreapi
+import coreschema
 
 from .services import make_transfer, is_date
 from .mixins import ServiceExceptionHandlerMixin
@@ -799,6 +800,7 @@ class JoinProfileToCompany(
             required=True,
             location="body",
             description='{"profile_phone":"string", "profile_id":"string"}',
+            schema=coreschema.Object()
         ),
     ])
 
@@ -910,6 +912,7 @@ class RemoveProfileFromCompany(
             required=True,
             location="body",
             description='{"profile_phone":"string", "profile_id":"string"}',
+            schema=coreschema.Object()
         ),
     ])
 
@@ -1025,6 +1028,7 @@ class HomeListViewSchema(schemas.AutoSchema):
                 coreapi.Field(
                     name='profile_id',
                     location='query',
+                    schema=coreschema.String()
                 )
             ]
 
@@ -1282,18 +1286,31 @@ class OperationListViewSchema(schemas.AutoSchema):
         if method.lower() in ['get', ]:
             extra_fields = [
                 coreapi.Field(
-                    name='profile_id',
-                    location='query',
-                ),
-                coreapi.Field(
                     'start_date',
                     required=True,
                     location='query',
+                    schema=coreschema.String()
                 ),
                 coreapi.Field(
                     'end_date',
                     required=True,
                     location='query',
+                    schema=coreschema.String()
+                ),
+                coreapi.Field(
+                    'account',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+                coreapi.Field(
+                    'category',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+                coreapi.Field(
+                    'tag',
+                    location='query',
+                    schema=coreschema.Array()
                 ),
             ]
 
@@ -1312,44 +1329,21 @@ class OperationListView(
     schema = OperationListViewSchema()
 
     def get(self, request, format=None):
-        req_profile = None
+        req_accounts = request.query_params['account'].split(
+            ",") if 'account' in request.query_params else []
+        req_categories = request.query_params['category'].split(
+            ",") if 'category' in request.query_params else []
+        req_tags = request.query_params['tag'].split(
+            ",") if 'tag' in request.query_params else []
 
-        if 'profile_id' in request.query_params:
-            if not models.Profile.objects.filter(
-                id=self.request.query_params['profile_id']
-            ).exists():
-                return Response({
-                    "detail":
-                    "Указанный профиль не содержиться в Вашей компании."
-                }, status=status.HTTP_400_BAD_REQUEST)
+        profile = models.Profile.objects.get(
+            user=self.request.user
+        )
 
-            req_profile = models.Profile.objects.get(
-                id=request.query_params['profile_id']
-            )
+        data = []
+        operation_data = []
 
-            user_profile = models.Profile.objects.get(
-                user=self.request.user
-            )
-
-            if req_profile.company != models.Profile.objects.get(
-                user=self.request.user
-            ).company:
-                return Response({
-                    "detail":
-                    "Указанный профиль не содержиться в Вашей компании."
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            if not user_profile.is_admin:
-                return Response({
-                    "detail":
-                    "Невозможно получить данные пользователя."
-                }, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            req_profile = models.Profile.objects.get(
-                user=self.request.user
-            )
-
-        if req_profile.company is None:
+        if profile.company is None:
             return Response({
                 "detail": "Сначала необходимо создать " +
                 "компанию или присоединиться к ней."
@@ -1377,20 +1371,24 @@ class OperationListView(
             parser.parse(start_date).replace(tzinfo=None))
         to_datetime = make_aware(parser.parse(end_date).replace(tzinfo=None))
 
-        data = []
+        try:
+            if profile.is_admin:
+                accounts = models.Account.objects.filter(
+                    company=profile.company
+                )
+                accounts = accounts.filter(
+                    id__in=req_accounts
+                ) if bool(req_accounts) else accounts
+            else:
+                accounts = models.Account.objects.filter(
+                    profile=profile
+                )
+                accounts = accounts.filter(
+                    id__in=req_accounts
+                ) if bool(req_accounts) else accounts
 
-        profile = req_profile
-
-        operation_data = []
-
-        actions = None
-
-        if profile.is_admin:
-            accounts = models.Account.objects\
-                .filter(company=profile.company)
-        else:
-            accounts = models.Account.objects\
-                .filter(profile=profile, company=profile.company)
+        except Exception as e:
+            print(f"action: {e}")
 
         try:
             actions = models.Action.objects.filter(
@@ -1401,6 +1399,13 @@ class OperationListView(
                 ]
             )
 
+            actions = actions.filter(
+                category__in=req_categories,
+            ) if bool(req_categories) else actions
+            actions = actions.filter(
+                tags__in=req_tags,
+            ) if bool(req_tags) else actions
+
         except Exception as e:
             print(f"action: {e}")
 
@@ -1408,7 +1413,7 @@ class OperationListView(
             new_item = {}
 
             new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
+            if profile.company.profiles.count() > 1:
                 new_item['name'] = item.account.profile.first_name[:1] + \
                     ". " + item.account.profile.last_name + \
                     " (" + item.account.account_name + ")"
@@ -1432,6 +1437,13 @@ class OperationListView(
                 ]
             )
 
+            transactions = transactions.filter(
+                category__in=req_categories,
+            ) if bool(req_categories) else transactions
+            transactions = transactions.filter(
+                tags__in=req_tags,
+            ) if bool(req_tags) else transactions
+
         except Exception as e:
             print(f"transactions: {e}")
 
@@ -1439,7 +1451,7 @@ class OperationListView(
             new_item = {}
 
             new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
+            if profile.company.profiles.count() > 1:
                 new_item['name'] = item.account.profile.first_name[:1] + \
                     ". " + item.account.profile.last_name + \
                     " (" + item.account.account_name + ")"
@@ -1474,6 +1486,9 @@ class OperationListView(
                 )
             ]
 
+            transfers_list = [] if bool(req_categories) else transfers_list
+            transfers_list = [] if bool(req_tags) else transfers_list
+
         except Exception as e:
             print(f"transfers: {e}")
 
@@ -1483,7 +1498,7 @@ class OperationListView(
         for item in transfers:
             new_item = {}
             new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
+            if profile.company.profiles.count() > 1:
                 new_item['name'] = item.from_account.profile.first_name[:1] + \
                     ". " + item.from_account.profile.last_name + \
                     " (" + item.from_account.account_name + ") " + \

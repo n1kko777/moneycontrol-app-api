@@ -78,8 +78,15 @@ class PrivateCustomerApiTests(TestCase):
         }
 
         client2.post(COMPANY_URL, payload)
+        profile2.refresh_from_db()
 
-        res = client2.get(f"{OPERATION_URL}?profile_id={self.profile.id}")
+        sample_account(
+            self=self,
+            profile=profile2,
+            company=profile2.company
+        )
+
+        res = client2.get(f"{OPERATION_URL}?account={self.account.id}")
 
         profile2.refresh_from_db()
         self.profile.refresh_from_db()
