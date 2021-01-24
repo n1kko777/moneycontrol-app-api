@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import make_aware
 from django.core.mail import send_mail
 from django.db.models import Sum
+from django.db.models.functions import Coalesce
 
 from rest_framework import viewsets, status, mixins, schemas
 from rest_framework.authentication import TokenAuthentication
@@ -1103,12 +1104,16 @@ class HomeListView(
                 .filter(profile=profile, company=profile.company)
 
         account_data = {
-            'navigate': "Account",
+            'navigate': "CreateAccount",
             'title': "Счета",
             'data': [],
         }
 
         layout_accounts = models.Account.objects.filter(
+            profile=profile
+        ).order_by('-last_updated') \
+            if 'profile_id' in request.query_params \
+            else models.Account.objects.filter(
             profile=profile
         ).order_by('-last_updated')[:5]
 
@@ -1123,70 +1128,75 @@ class HomeListView(
             account_data['data'].append(new_item)
         data.append(account_data)
 
-        if profile.is_admin and profile.company.profiles.count() > 1:
-            profile_data = {
-                'navigate': "Team",
-                'title': "Команда",
+        if 'profile_id' not in request.query_params:
+            if profile.is_admin and profile.company.profiles.count() > 1:
+                profile_data = {
+                    'navigate': "CreateTeam",
+                    'title': "Команда",
+                    'data': [],
+                }
+
+                profiles = models.Company.objects.get(
+                    id=profile.company.id
+                ).profiles.order_by('id')[:5]
+
+                for item in profiles:
+                    new_item = {}
+
+                    new_item['id'] = item.id
+                    new_item['name'] = item.first_name + " " + item.last_name
+                    new_item['balance'] = models.Account.objects.filter(
+                        profile=item
+                    ).aggregate(
+                        balance__sum=Coalesce(Sum('balance'), 0)
+                    )['balance__sum']
+
+                    new_item['last_updated'] = item.last_updated
+                    new_item['type'] = "profile"
+                    profile_data['data'].append(new_item)
+                data.append(profile_data)
+
+            category_data = {
+                'navigate': "CreateCategory",
+                'title': "Категории",
                 'data': [],
             }
 
-            profiles = models.Company.objects.get(
-                id=profile.company.id
-            ).profiles.order_by('id')[:5]
+            categories = models.Category.objects.filter(
+                company=profile.company
+            ).order_by('-last_updated')[:5]
 
-            for item in profiles:
+            for item in categories:
                 new_item = {}
 
                 new_item['id'] = item.id
-                new_item['name'] = item.first_name + " " + item.last_name
-                new_item['balance'] = models.Account.objects.filter(
-                    profile=item).aggregate(Sum('balance'))['balance__sum']
+                new_item['name'] = item.category_name
+                new_item['balance'] = ""
                 new_item['last_updated'] = item.last_updated
-                new_item['type'] = "profile"
-                profile_data['data'].append(new_item)
-            data.append(profile_data)
+                new_item['type'] = "category"
+                category_data['data'].append(new_item)
+            data.append(category_data)
 
-        category_data = {
-            'navigate': "Category",
-            'title': "Категории",
-            'data': [],
-        }
+            tag_data = {
+                'navigate': "CreateTag",
+                'title': "Теги",
+                'data': [],
+            }
 
-        categories = models.Category.objects.filter(
-            company=profile.company
-        ).order_by('-last_updated')[:5]
+            tags = models.Tag.objects.filter(
+                company=profile.company
+            ).order_by('-last_updated')[:5]
 
-        for item in categories:
-            new_item = {}
+            for item in tags:
+                new_item = {}
 
-            new_item['id'] = item.id
-            new_item['name'] = item.category_name
-            new_item['balance'] = ""
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "category"
-            category_data['data'].append(new_item)
-        data.append(category_data)
-
-        tag_data = {
-            'navigate': "Tag",
-            'title': "Теги",
-            'data': [],
-        }
-
-        tags = models.Tag.objects.filter(
-            company=profile.company
-        ).order_by('-last_updated')[:5]
-
-        for item in tags:
-            new_item = {}
-
-            new_item['id'] = item.id
-            new_item['name'] = item.tag_name
-            new_item['balance'] = ""
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "tag"
-            tag_data['data'].append(new_item)
-        data.append(tag_data)
+                new_item['id'] = item.id
+                new_item['name'] = item.tag_name
+                new_item['balance'] = ""
+                new_item['last_updated'] = item.last_updated
+                new_item['type'] = "tag"
+                tag_data['data'].append(new_item)
+            data.append(tag_data)
 
         operation_data = {
             'navigate': "Operation",
@@ -1271,7 +1281,9 @@ class HomeListView(
         data.append(operation_data)
 
         home_data = {
-            "balance": accounts.aggregate(Sum('balance'))['balance__sum'],
+            "balance": accounts.aggregate(
+                balance__sum=Coalesce(Sum('balance'), 0)
+            )['balance__sum'],
             "data": data
         }
 
@@ -1542,7 +1554,7 @@ class OperationListView(
                     last_updated__year=var[0]['last_updated'].year
             )
             .aggregate(
-                Sum('action_amount')
+                action_amount__sum=Coalesce(Sum('action_amount'), 0)
             )['action_amount__sum'],
             "total_day_transaction": transactions
             .filter(
@@ -1551,19 +1563,17 @@ class OperationListView(
                 last_updated__year=var[0]['last_updated'].year
             )
             .aggregate(
-                Sum('transaction_amount')
+                transaction_amount__sum=Coalesce(Sum('transaction_amount'), 0)
             )['transaction_amount__sum'],
             "data": var
         } for var in new_list]
 
         return Response({
-            "total_action": actions.
-            aggregate(
-                Sum('action_amount')
+            "total_action": actions.aggregate(
+                action_amount__sum=Coalesce(Sum('action_amount'), 0)
             )['action_amount__sum'],
-            "total_transaction": transactions.
-            aggregate(
-                Sum('transaction_amount')
+            "total_transaction": transactions.aggregate(
+                transaction_amount__sum=Coalesce(Sum('transaction_amount'), 0)
             )['transaction_amount__sum'],
             "data": data
         }, status=status.HTTP_200_OK)
