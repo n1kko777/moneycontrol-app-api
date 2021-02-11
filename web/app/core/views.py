@@ -1324,6 +1324,11 @@ class OperationListViewSchema(schemas.AutoSchema):
                     location='query',
                     schema=coreschema.Array()
                 ),
+                coreapi.Field(
+                    'type',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
             ]
 
         manual_fields = super().get_manual_fields(path, method)
@@ -1347,6 +1352,8 @@ class OperationListView(
             ",") if 'category' in request.query_params else []
         req_tags = request.query_params['tag'].split(
             ",") if 'tag' in request.query_params else []
+        req_types = request.query_params['type'].split(
+            ",") if 'type' in request.query_params else []
 
         profile = models.Profile.objects.get(
             user=self.request.user
@@ -1402,136 +1409,140 @@ class OperationListView(
         except Exception as e:
             print(f"action: {e}")
 
-        try:
-            actions = models.Action.objects.filter(
-                account__in=accounts,
-                last_updated__range=[
-                    from_datetime,
-                    to_datetime
-                ]
-            )
-
-            actions = actions.filter(
-                category__in=req_categories,
-            ) if bool(req_categories) else actions
-            actions = actions.filter(
-                tags__in=req_tags,
-            ) if bool(req_tags) else actions
-
-        except Exception as e:
-            print(f"action: {e}")
-
-        for item in actions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            if profile.company.profiles.count() > 1:
-                new_item['name'] = item.account.profile.first_name[:1] + \
-                    ". " + item.account.profile.last_name + \
-                    " (" + item.account.account_name + ")"
-            else:
-                new_item['name'] = item.account.account_name
-            new_item['account'] = item.account.id
-            new_item["style"] = "color-success-600"
-            new_item['balance'] = item.action_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['category'] = item.category.id
-            new_item['tags'] = [int(var.id) for var in item.tags.all()]
-            new_item['type'] = "action"
-            operation_data.append(new_item)
-
-        try:
-            transactions = models.Transaction.objects.filter(
-                account__in=accounts,
-                last_updated__range=[
-                    from_datetime,
-                    to_datetime
-                ]
-            )
-
-            transactions = transactions.filter(
-                category__in=req_categories,
-            ) if bool(req_categories) else transactions
-            transactions = transactions.filter(
-                tags__in=req_tags,
-            ) if bool(req_tags) else transactions
-
-        except Exception as e:
-            print(f"transactions: {e}")
-
-        for item in transactions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            if profile.company.profiles.count() > 1:
-                new_item['name'] = item.account.profile.first_name[:1] + \
-                    ". " + item.account.profile.last_name + \
-                    " (" + item.account.account_name + ")"
-            else:
-                new_item['name'] = item.account.account_name
-            new_item['account'] = item.account.id
-            new_item["style"] = "color-danger-600"
-            new_item['balance'] = item.transaction_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['category'] = item.category.id
-            new_item['tags'] = [int(var.id) for var in item.tags.all()]
-            new_item['type'] = "transaction"
-            operation_data.append(new_item)
-
-        transfers = []
-
-        try:
-            transfers_list = [
-                *models.Transfer.objects.filter(
-                    from_account__in=accounts,
-                    last_updated__range=[
-                        from_datetime,
-                        to_datetime
-                    ]
-                ),
-                *models.Transfer.objects.filter(
-                    to_account__in=accounts,
+        actions = models.Action.objects.none()
+        if (bool(req_types) and 'action' in req_types) or not bool(req_types):
+            try:
+                actions = models.Action.objects.filter(
+                    account__in=accounts,
                     last_updated__range=[
                         from_datetime,
                         to_datetime
                     ]
                 )
-            ]
 
-            transfers_list = [] if bool(req_categories) else transfers_list
-            transfers_list = [] if bool(req_tags) else transfers_list
+                actions = actions.filter(
+                    category__in=req_categories,
+                ) if bool(req_categories) else actions
+                actions = actions.filter(
+                    tags__in=req_tags,
+                ) if bool(req_tags) else actions
 
-        except Exception as e:
-            print(f"transfers: {e}")
+            except Exception as e:
+                print(f"action: {e}")
 
-        transfers = [i for n, i in enumerate(
-            transfers_list) if i not in transfers_list[n + 1:]]
+            for item in actions:
+                new_item = {}
 
-        for item in transfers:
-            new_item = {}
-            new_item['id'] = item.id
-            if profile.company.profiles.count() > 1:
-                new_item['name'] = item.from_account.profile.first_name[:1] + \
-                    ". " + item.from_account.profile.last_name + \
-                    " (" + item.from_account.account_name + ") " + \
-                    "=>" + \
-                    item.to_account.profile.first_name[:1] + \
-                    ". " + item.to_account.profile.last_name + \
-                    " (" + item.to_account.account_name + ") "
-            else:
-                new_item['name'] = item.from_account.account_name + \
-                    " => " + \
-                    item.to_account.account_name
-            new_item['balance'] = item.transfer_amount
-            new_item['last_updated'] = item.last_updated
-            new_item["from_account"] = \
-                f"{item.from_account.account_name} (pk={item.from_account.id})"
-            new_item["from_account_id"] = item.from_account.id
-            new_item["to_account"] = \
-                f"{item.to_account.account_name} (pk={item.to_account.id})"
-            new_item["to_account_id"] = item.to_account.id
-            new_item['type'] = "transfer"
-            operation_data.append(new_item)
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.account.profile.first_name[:1] + \
+                        ". " + item.account.profile.last_name + \
+                        " (" + item.account.account_name + ")"
+                else:
+                    new_item['name'] = item.account.account_name
+                new_item['account'] = item.account.id
+                new_item["style"] = "color-success-600"
+                new_item['balance'] = item.action_amount
+                new_item['last_updated'] = item.last_updated
+                new_item['category'] = item.category.id
+                new_item['tags'] = [int(var.id) for var in item.tags.all()]
+                new_item['type'] = "action"
+                operation_data.append(new_item)
+
+        transactions = models.Transaction.objects.none()
+        if (bool(req_types) and 'transaction' in req_types) or not bool(req_types):
+            try:
+                transactions = models.Transaction.objects.filter(
+                    account__in=accounts,
+                    last_updated__range=[
+                        from_datetime,
+                        to_datetime
+                    ]
+                )
+
+                transactions = transactions.filter(
+                    category__in=req_categories,
+                ) if bool(req_categories) else transactions
+                transactions = transactions.filter(
+                    tags__in=req_tags,
+                ) if bool(req_tags) else transactions
+
+            except Exception as e:
+                print(f"transactions: {e}")
+
+            for item in transactions:
+                new_item = {}
+
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.account.profile.first_name[:1] + \
+                        ". " + item.account.profile.last_name + \
+                        " (" + item.account.account_name + ")"
+                else:
+                    new_item['name'] = item.account.account_name
+                new_item['account'] = item.account.id
+                new_item["style"] = "color-danger-600"
+                new_item['balance'] = item.transaction_amount
+                new_item['last_updated'] = item.last_updated
+                new_item['category'] = item.category.id
+                new_item['tags'] = [int(var.id) for var in item.tags.all()]
+                new_item['type'] = "transaction"
+                operation_data.append(new_item)
+
+        transfers = []
+        if (bool(req_types) and 'transfer' in req_types) or not bool(req_types):
+            try:
+                transfers_list = [
+                    *models.Transfer.objects.filter(
+                        from_account__in=accounts,
+                        last_updated__range=[
+                            from_datetime,
+                            to_datetime
+                        ]
+                    ),
+                    *models.Transfer.objects.filter(
+                        to_account__in=accounts,
+                        last_updated__range=[
+                            from_datetime,
+                            to_datetime
+                        ]
+                    )
+                ]
+
+                transfers_list = [] if bool(req_categories) else transfers_list
+                transfers_list = [] if bool(req_tags) else transfers_list
+
+            except Exception as e:
+                print(f"transfers: {e}")
+
+            transfers = [i for n, i in enumerate(
+                transfers_list) if i not in transfers_list[n + 1:]]
+
+            for item in transfers:
+                new_item = {}
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.from_account.profile.first_name[:1] + \
+                        ". " + item.from_account.profile.last_name + \
+                        " (" + item.from_account.account_name + ") " + \
+                        "=>" + \
+                        item.to_account.profile.first_name[:1] + \
+                        ". " + item.to_account.profile.last_name + \
+                        " (" + item.to_account.account_name + ") "
+                else:
+                    new_item['name'] = item.from_account.account_name + \
+                        " => " + \
+                        item.to_account.account_name
+                new_item['balance'] = item.transfer_amount
+                new_item['last_updated'] = item.last_updated
+                new_item["from_account"] = \
+                    f"{item.from_account.account_name} (pk={item.from_account.id})"
+                new_item["from_account_id"] = item.from_account.id
+                new_item["to_account"] = \
+                    f"{item.to_account.account_name} (pk={item.to_account.id})"
+                new_item["to_account_id"] = item.to_account.id
+                new_item['type'] = "transfer"
+                operation_data.append(new_item)
 
         operation_data.sort(
             key=itemgetter('last_updated'),
