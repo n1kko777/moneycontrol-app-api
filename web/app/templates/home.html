@@ -1,13 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <!-- Main jumbotron for a primary marketing message or call to action -->
 <div class="jumbotron">
     <h1>Corporate Money Control</h1>
     <p>Corporate Money Control – мобильное приложение для автоматизации профессиональной деятельности, существенно облегчает и автоматизирует экономические, технические, аналитические процессы, повышая скорость и снижая время и средства на проведение различного рода операций.</p>
-    <p>
-        <a target="_blank" href="https://expo.io/@n1kko777/moneycontrol-rn-app" class="btn btn-primary">Скачать</a>
-        <a target="_blank" href="https://yadi.sk/d/fy35hkK_r-EqFA" class="btn btn-success">Скачать APK-файл</a>
+    <p style="margin-bottom: 0; margin-top: 40px;">
+        <a target="_blank" href="https://play.google.com/store/apps/details?id=ru.mncntrl.n1kko777" class="btn" style="width: 170px; padding: 0;">
+            <img style="width: 100%;" src="{% static 'images/store/googlr-play.png' %}" />
+        </a>
+        <a target="_blank" href="https://expo.io/@n1kko777/moneycontrol-rn-app" class="btn" style="width: 170px; padding: 0;">
+            <img style="width: 100%;" src="{% static 'images/store/app-store.png' %}" />
+        </a>
     </p>
 </div>
 {% endblock %}

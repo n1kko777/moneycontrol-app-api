@@ -1,24 +1,29 @@
-from . import serializers, models
-from .services import make_transfer, is_date
+from django.contrib.auth import get_user_model
+from django.utils.timezone import make_aware
+from django.core.mail import send_mail
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
 
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, schemas
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .mixins import ServiceExceptionHandlerMixin
 from rest_framework.generics import get_object_or_404
 
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.db.models import Sum
 from operator import itemgetter
 from collections import defaultdict
 
-import decimal
 from dateutil import parser
-from django.utils.timezone import make_aware
+
+import decimal
+import coreapi
+import coreschema
+
+from .services import make_transfer, is_date
+from .mixins import ServiceExceptionHandlerMixin
+from . import serializers, models
+
 
 User = get_user_model()
 
@@ -781,17 +786,24 @@ class TagViewSet(viewsets.ModelViewSet):
             )
 
 
-# Custom View to join profile to Company
-# – profile_id
-# - profile_phone
-
-
 class JoinProfileToCompany(
     ServiceExceptionHandlerMixin,
     APIView
 ):
+    """ Custom View to join profile to Company """
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    schema = schemas.AutoSchema(manual_fields=[
+        coreapi.Field(
+            "data",
+            required=True,
+            location="body",
+            description='{"profile_phone":"string", "profile_id":"string"}',
+            schema=coreschema.Object()
+        ),
+    ])
 
     def post(self, request):
         profile = get_object_or_404(
@@ -886,17 +898,24 @@ class JoinProfileToCompany(
             )
 
 
-# Custom View to remove profile from Company
-# – profile_id
-# - profile_phone
-
-
 class RemoveProfileFromCompany(
     ServiceExceptionHandlerMixin,
     APIView
 ):
+    """ Custom View to remove profile from Company """
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+
+    schema = schemas.AutoSchema(manual_fields=[
+        coreapi.Field(
+            "data",
+            required=True,
+            location="body",
+            description='{"profile_phone":"string", "profile_id":"string"}',
+            schema=coreschema.Object()
+        ),
+    ])
 
     def post(self, request):
         profile = get_object_or_404(
@@ -1000,6 +1019,24 @@ class RemoveProfileFromCompany(
             )
 
 
+class HomeListViewSchema(schemas.AutoSchema):
+
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+
+        if method.lower() in ['get', ]:
+            extra_fields = [
+                coreapi.Field(
+                    name='profile_id',
+                    location='query',
+                    schema=coreschema.String()
+                )
+            ]
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
 class HomeListView(
     ServiceExceptionHandlerMixin,
     APIView
@@ -1007,13 +1044,22 @@ class HomeListView(
     """ Custom View to get home list data """
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+    schema = HomeListViewSchema()
 
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         req_profile = None
 
-        if request.data.get("profile_id"):
+        if 'profile_id' in request.query_params:
+            if not models.Profile.objects.filter(
+                id=self.request.query_params['profile_id']
+            ).exists():
+                return Response({
+                    "detail":
+                    "Указанный профиль не содержиться в Вашей компании."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             req_profile = models.Profile.objects.get(
-                id=self.request.data['profile_id']
+                id=self.request.query_params['profile_id']
             )
 
             user_profile = models.Profile.objects.get(
@@ -1058,13 +1104,19 @@ class HomeListView(
                 .filter(profile=profile, company=profile.company)
 
         account_data = {
-            'navigate': "Account",
+            'navigate': "CreateAccount",
             'title': "Счета",
             'data': [],
         }
 
         layout_accounts = models.Account.objects.filter(
-            profile=profile).order_by('-last_updated')
+            profile=profile
+        ).order_by('-last_updated') \
+            if 'profile_id' in request.query_params \
+            else models.Account.objects.filter(
+            profile=profile
+        ).order_by('-last_updated')[:5]
+
         for item in layout_accounts:
             new_item = {}
 
@@ -1076,65 +1128,75 @@ class HomeListView(
             account_data['data'].append(new_item)
         data.append(account_data)
 
-        if profile.is_admin and profile.company.profiles.count() > 1:
-            profile_data = {
-                'navigate': "Team",
-                'title': "Команда",
+        if 'profile_id' not in request.query_params:
+            if profile.is_admin and profile.company.profiles.count() > 1:
+                profile_data = {
+                    'navigate': "CreateTeam",
+                    'title': "Команда",
+                    'data': [],
+                }
+
+                profiles = models.Company.objects.get(
+                    id=profile.company.id
+                ).profiles.order_by('id')[:5]
+
+                for item in profiles:
+                    new_item = {}
+
+                    new_item['id'] = item.id
+                    new_item['name'] = item.first_name + " " + item.last_name
+                    new_item['balance'] = models.Account.objects.filter(
+                        profile=item
+                    ).aggregate(
+                        balance__sum=Coalesce(Sum('balance'), 0)
+                    )['balance__sum']
+
+                    new_item['last_updated'] = item.last_updated
+                    new_item['type'] = "profile"
+                    profile_data['data'].append(new_item)
+                data.append(profile_data)
+
+            category_data = {
+                'navigate': "CreateCategory",
+                'title': "Категории",
                 'data': [],
             }
 
-            profiles = models.Company.objects.get(
-                id=profile.company.id).profiles.order_by('id')
+            categories = models.Category.objects.filter(
+                company=profile.company
+            ).order_by('-last_updated')[:5]
 
-            for item in profiles:
+            for item in categories:
                 new_item = {}
 
                 new_item['id'] = item.id
-                new_item['name'] = item.first_name + " " + item.last_name
-                new_item['balance'] = models.Account.objects.filter(
-                    profile=item).aggregate(Sum('balance'))['balance__sum']
+                new_item['name'] = item.category_name
+                new_item['balance'] = ""
                 new_item['last_updated'] = item.last_updated
-                new_item['type'] = "profile"
-                profile_data['data'].append(new_item)
-            data.append(profile_data)
+                new_item['type'] = "category"
+                category_data['data'].append(new_item)
+            data.append(category_data)
 
-        category_data = {
-            'navigate': "Category",
-            'title': "Категории",
-            'data': [],
-        }
+            tag_data = {
+                'navigate': "CreateTag",
+                'title': "Теги",
+                'data': [],
+            }
 
-        categories = models.Category.objects.filter(
-            company=profile.company).order_by('-last_updated')
-        for item in categories:
-            new_item = {}
+            tags = models.Tag.objects.filter(
+                company=profile.company
+            ).order_by('-last_updated')[:5]
 
-            new_item['id'] = item.id
-            new_item['name'] = item.category_name
-            new_item['balance'] = ""
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "category"
-            category_data['data'].append(new_item)
-        data.append(category_data)
+            for item in tags:
+                new_item = {}
 
-        tag_data = {
-            'navigate': "Tag",
-            'title': "Теги",
-            'data': [],
-        }
-
-        tags = models.Tag.objects.filter(
-            company=profile.company).order_by('-last_updated')
-        for item in tags:
-            new_item = {}
-
-            new_item['id'] = item.id
-            new_item['name'] = item.tag_name
-            new_item['balance'] = ""
-            new_item['last_updated'] = item.last_updated
-            new_item['type'] = "tag"
-            tag_data['data'].append(new_item)
-        data.append(tag_data)
+                new_item['id'] = item.id
+                new_item['name'] = item.tag_name
+                new_item['balance'] = ""
+                new_item['last_updated'] = item.last_updated
+                new_item['type'] = "tag"
+                tag_data['data'].append(new_item)
+            data.append(tag_data)
 
         operation_data = {
             'navigate': "Operation",
@@ -1142,16 +1204,8 @@ class HomeListView(
             'data': [],
         }
 
-        actions = None
-
-        if profile.is_admin:
-            accounts = models.Account.objects\
-                .filter(company=profile.company)
-        else:
-            accounts = models.Account.objects\
-                .filter(profile=profile, company=profile.company)
-
         actions = models.Action.objects.filter(account__in=accounts)
+
         for item in actions:
             new_item = {}
 
@@ -1227,11 +1281,58 @@ class HomeListView(
         data.append(operation_data)
 
         home_data = {
-            "balance": accounts.aggregate(Sum('balance'))['balance__sum'],
+            "balance": accounts.aggregate(
+                balance__sum=Coalesce(Sum('balance'), 0)
+            )['balance__sum'],
             "data": data
         }
 
         return Response(home_data, status=status.HTTP_200_OK)
+
+
+class OperationListViewSchema(schemas.AutoSchema):
+
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+
+        if method.lower() in ['get', ]:
+            extra_fields = [
+                coreapi.Field(
+                    'start_date',
+                    required=True,
+                    location='query',
+                    schema=coreschema.String()
+                ),
+                coreapi.Field(
+                    'end_date',
+                    required=True,
+                    location='query',
+                    schema=coreschema.String()
+                ),
+                coreapi.Field(
+                    'account',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+                coreapi.Field(
+                    'category',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+                coreapi.Field(
+                    'tag',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+                coreapi.Field(
+                    'type',
+                    location='query',
+                    schema=coreschema.Array()
+                ),
+            ]
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
 
 
 class OperationListView(
@@ -1242,190 +1343,211 @@ class OperationListView(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
 
-    def post(self, request, format=None):
-        req_profile = None
+    schema = OperationListViewSchema()
 
-        if request.data.get("profile_id"):
-            req_profile = models.Profile.objects.get(
-                id=self.request.data['profile_id']
-            )
+    def get(self, request, format=None):
+        req_accounts = request.query_params['account'].split(
+            ",") if 'account' in request.query_params else []
+        req_categories = request.query_params['category'].split(
+            ",") if 'category' in request.query_params else []
+        req_tags = request.query_params['tag'].split(
+            ",") if 'tag' in request.query_params else []
+        req_types = request.query_params['type'].split(
+            ",") if 'type' in request.query_params else []
 
-            user_profile = models.Profile.objects.get(
-                user=self.request.user
-            )
+        profile = models.Profile.objects.get(
+            user=self.request.user
+        )
 
-            if req_profile.company != models.Profile.objects.get(
-                user=self.request.user
-            ).company:
-                return Response({
-                    "detail":
-                    "Указанный профиль не содержиться в Вашей компании."
-                }, status=status.HTTP_400_BAD_REQUEST)
+        data = []
+        operation_data = []
 
-            if not user_profile.is_admin:
-                return Response({
-                    "detail":
-                    "Невозможно получить данные пользователя."
-                }, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            req_profile = models.Profile.objects.get(
-                user=self.request.user
-            )
-
-        if req_profile.company is None:
+        if profile.company is None:
             return Response({
                 "detail": "Сначала необходимо создать " +
                 "компанию или присоединиться к ней."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         if (
-            'start_date' not in self.request.data or
-            'end_date' not in self.request.data
+            'start_date' not in request.query_params or
+            'end_date' not in request.query_params
         ):
             return Response({
                 "detail": "Неверный диапазон дат"
             }, status=status.HTTP_400_BAD_REQUEST)
         elif (
-            not is_date(self.request.data['start_date']) or
-            not is_date(self.request.data['end_date'])
+            not is_date(request.query_params['start_date']) or
+            not is_date(request.query_params['end_date'])
         ):
             return Response({
                 "detail": "Неверный диапазон дат"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        start_date = self.request.data['start_date']
-        end_date = self.request.data['end_date']
+        start_date = request.query_params['start_date']
+        end_date = request.query_params['end_date']
 
         from_datetime = make_aware(
             parser.parse(start_date).replace(tzinfo=None))
         to_datetime = make_aware(parser.parse(end_date).replace(tzinfo=None))
 
-        data = []
-
-        profile = req_profile
-
-        operation_data = []
-
-        actions = None
-
-        if profile.is_admin:
-            accounts = models.Account.objects\
-                .filter(company=profile.company)
-        else:
-            accounts = models.Account.objects\
-                .filter(profile=profile, company=profile.company)
-
         try:
-            actions = models.Action.objects.filter(
-                account__in=accounts,
-                last_updated__range=[
-                    from_datetime,
-                    to_datetime
-                ]
-            )
+            if profile.is_admin:
+                accounts = models.Account.objects.filter(
+                    company=profile.company
+                )
+                accounts = accounts.filter(
+                    id__in=req_accounts
+                ) if bool(req_accounts) else accounts
+            else:
+                accounts = models.Account.objects.filter(
+                    profile=profile
+                )
+                accounts = accounts.filter(
+                    id__in=req_accounts
+                ) if bool(req_accounts) else accounts
+
         except Exception as e:
             print(f"action: {e}")
 
-        for item in actions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
-                new_item['name'] = item.account.profile.first_name[:1] + \
-                    ". " + item.account.profile.last_name + \
-                    " (" + item.account.account_name + ")"
-            else:
-                new_item['name'] = item.account.account_name
-            new_item['account'] = item.account.id
-            new_item["style"] = "color-success-600"
-            new_item['balance'] = item.action_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['category'] = item.category.id
-            new_item['tags'] = [int(var.id) for var in item.tags.all()]
-            new_item['type'] = "action"
-            operation_data.append(new_item)
-
-        try:
-            transactions = models.Transaction.objects.filter(
-                account__in=accounts,
-                last_updated__range=[
-                    from_datetime,
-                    to_datetime
-                ]
-            )
-
-        except Exception as e:
-            print(f"transactions: {e}")
-
-        for item in transactions:
-            new_item = {}
-
-            new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
-                new_item['name'] = item.account.profile.first_name[:1] + \
-                    ". " + item.account.profile.last_name + \
-                    " (" + item.account.account_name + ")"
-            else:
-                new_item['name'] = item.account.account_name
-            new_item['account'] = item.account.id
-            new_item["style"] = "color-danger-600"
-            new_item['balance'] = item.transaction_amount
-            new_item['last_updated'] = item.last_updated
-            new_item['category'] = item.category.id
-            new_item['tags'] = [int(var.id) for var in item.tags.all()]
-            new_item['type'] = "transaction"
-            operation_data.append(new_item)
-
-        transfers = []
-
-        try:
-            transfers_list = [
-                *models.Transfer.objects.filter(
-                    from_account__in=accounts,
-                    last_updated__range=[
-                        from_datetime,
-                        to_datetime
-                    ]
-                ),
-                *models.Transfer.objects.filter(
-                    to_account__in=accounts,
+        actions = models.Action.objects.none()
+        if (bool(req_types) and 'action' in req_types) or not bool(req_types):
+            try:
+                actions = models.Action.objects.filter(
+                    account__in=accounts,
                     last_updated__range=[
                         from_datetime,
                         to_datetime
                     ]
                 )
-            ]
-        except Exception as e:
-            print(f"transfers: {e}")
 
-        transfers = [i for n, i in enumerate(
-            transfers_list) if i not in transfers_list[n + 1:]]
+                actions = actions.filter(
+                    category__in=req_categories,
+                ) if bool(req_categories) else actions
+                actions = actions.filter(
+                    tags__in=req_tags,
+                ) if bool(req_tags) else actions
 
-        for item in transfers:
-            new_item = {}
-            new_item['id'] = item.id
-            if req_profile.company.profiles.count() > 1:
-                new_item['name'] = item.from_account.profile.first_name[:1] + \
-                    ". " + item.from_account.profile.last_name + \
-                    " (" + item.from_account.account_name + ") " + \
-                    "=>" + \
-                    item.to_account.profile.first_name[:1] + \
-                    ". " + item.to_account.profile.last_name + \
-                    " (" + item.to_account.account_name + ") "
-            else:
-                new_item['name'] = item.from_account.account_name + \
-                    " => " + \
-                    item.to_account.account_name
-            new_item['balance'] = item.transfer_amount
-            new_item['last_updated'] = item.last_updated
-            new_item["from_account"] = \
-                f"{item.from_account.account_name} (pk={item.from_account.id})"
-            new_item["from_account_id"] = item.from_account.id
-            new_item["to_account"] = \
-                f"{item.to_account.account_name} (pk={item.to_account.id})"
-            new_item["to_account_id"] = item.to_account.id
-            new_item['type'] = "transfer"
-            operation_data.append(new_item)
+            except Exception as e:
+                print(f"action: {e}")
+
+            for item in actions:
+                new_item = {}
+
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.account.profile.first_name[:1] + \
+                        ". " + item.account.profile.last_name + \
+                        " (" + item.account.account_name + ")"
+                else:
+                    new_item['name'] = item.account.account_name
+                new_item['account'] = item.account.id
+                new_item["style"] = "color-success-600"
+                new_item['balance'] = item.action_amount
+                new_item['last_updated'] = item.last_updated
+                new_item['category'] = item.category.id
+                new_item['tags'] = [int(var.id) for var in item.tags.all()]
+                new_item['type'] = "action"
+                operation_data.append(new_item)
+
+        transactions = models.Transaction.objects.none()
+        if (bool(req_types) and 'transaction' in req_types) \
+                or not bool(req_types):
+            try:
+                transactions = models.Transaction.objects.filter(
+                    account__in=accounts,
+                    last_updated__range=[
+                        from_datetime,
+                        to_datetime
+                    ]
+                )
+
+                transactions = transactions.filter(
+                    category__in=req_categories,
+                ) if bool(req_categories) else transactions
+                transactions = transactions.filter(
+                    tags__in=req_tags,
+                ) if bool(req_tags) else transactions
+
+            except Exception as e:
+                print(f"transactions: {e}")
+
+            for item in transactions:
+                new_item = {}
+
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.account.profile.first_name[:1] + \
+                        ". " + item.account.profile.last_name + \
+                        " (" + item.account.account_name + ")"
+                else:
+                    new_item['name'] = item.account.account_name
+                new_item['account'] = item.account.id
+                new_item["style"] = "color-danger-600"
+                new_item['balance'] = item.transaction_amount
+                new_item['last_updated'] = item.last_updated
+                new_item['category'] = item.category.id
+                new_item['tags'] = [int(var.id) for var in item.tags.all()]
+                new_item['type'] = "transaction"
+                operation_data.append(new_item)
+
+        transfers = []
+        if (bool(req_types) and 'transfer' in req_types) \
+                or not bool(req_types):
+            try:
+                transfers_list = [
+                    *models.Transfer.objects.filter(
+                        from_account__in=accounts,
+                        last_updated__range=[
+                            from_datetime,
+                            to_datetime
+                        ]
+                    ),
+                    *models.Transfer.objects.filter(
+                        to_account__in=accounts,
+                        last_updated__range=[
+                            from_datetime,
+                            to_datetime
+                        ]
+                    )
+                ]
+
+                transfers_list = [] if bool(req_categories) else transfers_list
+                transfers_list = [] if bool(req_tags) else transfers_list
+
+            except Exception as e:
+                print(f"transfers: {e}")
+
+            transfers = [i for n, i in enumerate(
+                transfers_list) if i not in transfers_list[n + 1:]]
+
+            for item in transfers:
+                new_item = {}
+                new_item['id'] = item.id
+                if profile.company.profiles.count() > 1:
+                    new_item['name'] = item.from_account\
+                        .profile.first_name[:1] + \
+                        ". " + item.from_account.profile.last_name + \
+                        " (" + item.from_account.account_name + ") " + \
+                        "=>" + \
+                        item.to_account.profile.first_name[:1] + \
+                        ". " + item.to_account.profile.last_name + \
+                        " (" + item.to_account.account_name + ") "
+                else:
+                    new_item['name'] = item.from_account.account_name + \
+                        " => " + \
+                        item.to_account.account_name
+                new_item['balance'] = item.transfer_amount
+                new_item['last_updated'] = item.last_updated
+                new_item["from_account"] = \
+                    f"{item.from_account.account_name} \
+                        (pk={item.from_account.id})"
+                new_item["from_account_id"] = item.from_account.id
+                new_item["to_account"] = \
+                    f"{item.to_account.account_name} \
+                        (pk={item.to_account.id})"
+                new_item["to_account_id"] = item.to_account.id
+                new_item['type'] = "transfer"
+                operation_data.append(new_item)
 
         operation_data.sort(
             key=itemgetter('last_updated'),
@@ -1441,35 +1563,15 @@ class OperationListView(
 
         data = [{
             "title": var[0]['last_updated'].strftime('%d.%m.%Y'),
-            "total_day_action": actions
-                .filter(
-                    last_updated__day=var[0]['last_updated'].day,
-                    last_updated__month=var[0]['last_updated'].month,
-                    last_updated__year=var[0]['last_updated'].year
-            )
-            .aggregate(
-                Sum('action_amount')
-            )['action_amount__sum'],
-            "total_day_transaction": transactions
-            .filter(
-                last_updated__day=var[0]['last_updated'].day,
-                last_updated__month=var[0]['last_updated'].month,
-                last_updated__year=var[0]['last_updated'].year
-            )
-            .aggregate(
-                Sum('transaction_amount')
-            )['transaction_amount__sum'],
             "data": var
         } for var in new_list]
 
         return Response({
-            "total_action": actions.
-            aggregate(
-                Sum('action_amount')
+            "total_action": actions.aggregate(
+                action_amount__sum=Coalesce(Sum('action_amount'), 0)
             )['action_amount__sum'],
-            "total_transaction": transactions.
-            aggregate(
-                Sum('transaction_amount')
+            "total_transaction": transactions.aggregate(
+                transaction_amount__sum=Coalesce(Sum('transaction_amount'), 0)
             )['transaction_amount__sum'],
             "data": data
         }, status=status.HTTP_200_OK)
