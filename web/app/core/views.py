@@ -1450,7 +1450,8 @@ class OperationListView(
                 operation_data.append(new_item)
 
         transactions = models.Transaction.objects.none()
-        if (bool(req_types) and 'transaction' in req_types) or not bool(req_types):
+        if (bool(req_types) and 'transaction' in req_types) \
+                or not bool(req_types):
             try:
                 transactions = models.Transaction.objects.filter(
                     account__in=accounts,
@@ -1490,7 +1491,8 @@ class OperationListView(
                 operation_data.append(new_item)
 
         transfers = []
-        if (bool(req_types) and 'transfer' in req_types) or not bool(req_types):
+        if (bool(req_types) and 'transfer' in req_types) \
+                or not bool(req_types):
             try:
                 transfers_list = [
                     *models.Transfer.objects.filter(
@@ -1522,7 +1524,8 @@ class OperationListView(
                 new_item = {}
                 new_item['id'] = item.id
                 if profile.company.profiles.count() > 1:
-                    new_item['name'] = item.from_account.profile.first_name[:1] + \
+                    new_item['name'] = item.from_account\
+                        .profile.first_name[:1] + \
                         ". " + item.from_account.profile.last_name + \
                         " (" + item.from_account.account_name + ") " + \
                         "=>" + \
@@ -1536,10 +1539,12 @@ class OperationListView(
                 new_item['balance'] = item.transfer_amount
                 new_item['last_updated'] = item.last_updated
                 new_item["from_account"] = \
-                    f"{item.from_account.account_name} (pk={item.from_account.id})"
+                    f"{item.from_account.account_name} \
+                        (pk={item.from_account.id})"
                 new_item["from_account_id"] = item.from_account.id
                 new_item["to_account"] = \
-                    f"{item.to_account.account_name} (pk={item.to_account.id})"
+                    f"{item.to_account.account_name} \
+                        (pk={item.to_account.id})"
                 new_item["to_account_id"] = item.to_account.id
                 new_item['type'] = "transfer"
                 operation_data.append(new_item)
