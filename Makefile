@@ -25,4 +25,4 @@ test_prod:
 backup_prod:
 	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py dbbackup --clean"
 restore_prod:
-	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py dbbackup --noinput"
+	docker-compose -f docker-compose.prod.yml run --rm web sh -c "python manage.py dbrestore --noinput"

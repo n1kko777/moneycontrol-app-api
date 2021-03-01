@@ -12,8 +12,7 @@ jobs:
       - name: Testing...
         run: |
           echo -e "SECRET_KEY=please_change_me\n
-          ALLOWED_HOSTS=0.0.0.0,\n
-          DOMAIN=example.com,\n
+          DOMAIN=0.0.0.0,\n
           SQL_ENGINE=django.db.backends.postgresql\n
           SQL_DATABASE=postgres\n
           SQL_USER=postgres\n
