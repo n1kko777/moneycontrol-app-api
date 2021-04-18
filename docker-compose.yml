@@ -21,6 +21,8 @@ services:
       - POSTGRES_PASSWORD=${SQL_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./scripts:/docker-entrypoint-initdb.d
+
 volumes:
   postgres_data:
 # TIP: docker-compsoe automatically adds folder name as prefix
