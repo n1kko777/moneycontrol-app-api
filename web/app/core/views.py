@@ -1388,7 +1388,12 @@ class OperationListView(
 
         from_datetime = make_aware(
             parser.parse(start_date).replace(tzinfo=None))
-        to_datetime = make_aware(parser.parse(end_date).replace(tzinfo=None))
+        to_date = make_aware(parser.parse(end_date).replace(tzinfo=None))
+        to_datetime = to_date.replace(
+            minute=59,
+            hour=23,
+            second=59
+        )
 
         try:
             if profile.is_admin:
