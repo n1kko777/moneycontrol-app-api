@@ -82,25 +82,35 @@ class PrivateCustomerApiTests(TestCase):
         res = self.client.put(url, payload)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_admin_can_access_account_other_team_member(self):
-        profile = sample_profile(self.user)
-        company = sample_company(self)
-        sample_account(self, profile, company)
+    def test_admin_not_access_account_other_team_member(self):
+        """Test unauthenticated recipe API request"""
 
         user2 = get_user_model().objects.create_user(
             email='other@gleb.com',
             password='otherpass',
             username='test_1'
         )
+
+        client1 = APIClient()
+        client1.force_authenticate(user=self.user)
+
+        profile1 = sample_profile(user=self.user)
+        company = sample_company(self)
+
+        sample_account(self, profile1, company)
+
+        client2 = APIClient()
+        client2.force_authenticate(user=user2)
         profile2 = sample_profile(user=user2)
-        self.client.post('/api/v1/join-profile-to-company/', {
+
+        client1.post('/api/v1/join-profile-to-company/', {
             'profile_id': profile2.id,
             'profile_phone': profile2.phone
         }, format="json")
-        profile2.refresh_from_db()
-        sample_account(self, profile, company)
+        profile1.refresh_from_db()
+        sample_account(self, profile2, company)
 
-        res = self.client.get(ACCOUNT_URL)
+        res = client1.get(ACCOUNT_URL)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
+        self.assertEqual(len(res.data), 1)
