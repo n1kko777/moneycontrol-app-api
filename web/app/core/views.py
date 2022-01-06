@@ -209,10 +209,6 @@ class AccountViewSet(viewsets.ModelViewSet):
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
-            if profile.is_admin:
-                return models.Account.objects.filter(company=profile.company)\
-                    .order_by('-last_updated')
-
             return models.Account.objects\
                 .filter(profile=profile, company=profile.company)\
                 .order_by('-last_updated')
