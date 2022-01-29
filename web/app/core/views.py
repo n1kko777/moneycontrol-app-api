@@ -194,6 +194,25 @@ class ProfileViewSet(viewsets.ModelViewSet):
         )
 
 
+class OrderByViewGetSchema(schemas.AutoSchema):
+
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+
+        if method.lower() in ['get', ]:
+            extra_fields = [
+                coreapi.Field(
+                    'order_by',
+                    required=False,
+                    location='query',
+                    schema=coreschema.String()
+                ),
+            ]
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
 class AccountViewSet(viewsets.ModelViewSet):
     """ViewSet for the Account class"""
 
@@ -201,17 +220,23 @@ class AccountViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.AccountSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+    schema = OrderByViewGetSchema()
 
     def get_queryset(self):
         if models.Profile.objects\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
+            order_by = '-last_updated'
+
+            if 'order_by' in self.request.query_params:
+                order_by = self.request.query_params['order_by']
+
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
             return models.Account.objects\
                 .filter(profile=profile, company=profile.company)\
-                .order_by('-last_updated')
+                .order_by(order_by)
 
     def perform_create(self, serializer):
         serializer.save(profile=models.Profile.objects.get(
@@ -588,16 +613,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CategorySerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+    schema = OrderByViewGetSchema()
 
     def get_queryset(self):
         if models.Profile.objects\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
+            order_by = '-last_updated'
+
+            if 'order_by' in self.request.query_params:
+                order_by = self.request.query_params['order_by']
+
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
             return models.Category.objects.filter(company=profile.company)\
-                .order_by('-last_updated')
+                .order_by(order_by)
 
     def perform_create(self, serializer):
         """Create a new category"""
@@ -688,16 +719,22 @@ class TagViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.TagSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, )
+    schema = OrderByViewGetSchema()
 
     def get_queryset(self):
         if models.Profile.objects\
                 .filter(user=self.request.user,
                         company__isnull=False).exists():
+            order_by = '-last_updated'
+
+            if 'order_by' in self.request.query_params:
+                order_by = self.request.query_params['order_by']
+
             profile = models.Profile.objects\
                 .filter(user=self.request.user)[0]
 
             return models.Tag.objects.filter(company=profile.company)\
-                .order_by('-last_updated')
+                .order_by(order_by)
 
     def perform_create(self, serializer):
         """Create a new tag"""
