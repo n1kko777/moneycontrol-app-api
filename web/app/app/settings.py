@@ -50,7 +50,7 @@ INSTALLED_APPS = [
 DBBACKUP_STORAGE = 'storages.backends.dropbox.DropBoxStorage'
 DBBACKUP_STORAGE_OPTIONS = {
     'oauth2_access_token': os.environ.get('DROPBOX_API_TOKEN', 'my_token'),
-    'root_path': 'mncntrl',
+    'root_path': 'backups',
 }
 
 MIDDLEWARE = [
