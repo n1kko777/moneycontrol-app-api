@@ -45,6 +45,7 @@ class AccountSerializer(serializers.ModelSerializer):
             'profile',
             'balance',
             'is_active',
+            'is_visible',
             'account_name',
             'account_color',
             'last_updated',

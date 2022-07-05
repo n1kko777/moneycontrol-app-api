@@ -75,6 +75,7 @@ class Account(models.Model):
     balance = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     account_name = models.CharField(max_length=30)
     account_color = models.CharField(max_length=30, blank=True, null=True)
+    is_visible = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
