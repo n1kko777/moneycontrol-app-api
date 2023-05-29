@@ -128,7 +128,7 @@ dmypy.json
 .history
 .vscode
 .DS_Store
-app/static/*
-app/media
-!app/static/images/
+static/*
+media
+!static/images/
 backups/
