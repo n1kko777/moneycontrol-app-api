@@ -132,3 +132,5 @@ static/*
 media
 !static/images/
 backups/
+
+docker-compose.yml
