@@ -72,7 +72,7 @@ class Account(models.Model):
     )
 
     #  Fields
-    balance = models.DecimalField(default=0, max_digits=10, decimal_places=2)
+    balance = models.DecimalField(default=0, max_digits=20, decimal_places=2)
     account_name = models.CharField(max_length=30)
     account_color = models.CharField(max_length=30, blank=True, null=True)
     is_active = models.BooleanField(default=True)
@@ -100,7 +100,7 @@ class Action(models.Model):
     )
 
     #  Fields
-    action_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    action_amount = models.DecimalField(max_digits=20, decimal_places=2)
     is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -123,7 +123,7 @@ class Transfer(models.Model):
     )
 
     #  Fields
-    transfer_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transfer_amount = models.DecimalField(max_digits=20, decimal_places=2)
     is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -146,7 +146,7 @@ class Transaction(models.Model):
     )
 
     #  Fields
-    transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_amount = models.DecimalField(max_digits=20, decimal_places=2)
     is_active = models.BooleanField(default=True)
 
     created = models.DateTimeField(auto_now_add=True, editable=False)
