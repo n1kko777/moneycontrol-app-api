@@ -134,3 +134,6 @@ media
 backups/
 
 docker-compose.yml
+Makefile
+Dockerfile
+entrypoint.sh
