@@ -4,10 +4,5 @@
         "dokku": {
         "predeploy": "python manage.py collectstatic --noinput && python manage.py migrate"
         }
-    },
-    "formation": {
-      "web": {
-        "command": "gunicorn --workers 5 --timeout 1200 app.wsgi"
-      }
     }
 }
