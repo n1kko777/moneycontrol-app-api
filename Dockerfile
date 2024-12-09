@@ -2,22 +2,20 @@
 FROM python:3.10-slim
 
 # Устанавливаем зависимости системы
-RUN apt-get update && apt-get install -y libpq-dev gcc
+RUN apt-get update && apt-get install -y build-essential libpq-dev --no-install-recommends
 
-# Устанавливаем рабочую директорию
+# Указываем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы приложения
-COPY . /app
+# Копируем зависимости
+COPY requirements.txt /app/
 
-# Устанавливаем зависимости Python
+# Устанавливаем Python-зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Собираем статические файлы
-RUN python manage.py collectstatic --noinput
+# Копируем приложение
+COPY . /app/
 
-# Выполняем миграции базы данных
-RUN python manage.py migrate
-
-# Указываем команду для запуска приложения
-CMD ["gunicorn", "--workers", "5", "--timeout", "1200", "app.wsgi"]
+# Устанавливаем переменные окружения по умолчанию
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
