@@ -1,0 +1,8 @@
+{
+    "name": "moneycontrol-app-api",
+    "scripts": {
+        "dokku": {
+        "predeploy": "python manage.py collectstatic --noinput && python manage.py migrate"
+        }
+    }
+}
